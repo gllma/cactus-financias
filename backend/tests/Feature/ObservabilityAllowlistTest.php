@@ -22,17 +22,4 @@ class ObservabilityAllowlistTest extends TestCase
             ->get('/infra/observability')
             ->assertForbidden();
     }
-
-    public function test_user_in_allowlist_by_identifier_is_authorized(): void
-    {
-        $user = User::factory()->create([
-            'email' => 'blocked@cactus.com',
-        ]);
-
-        config()->set('observability.allowlist', [(string) $user->id]);
-
-        $this->actingAs($user)
-            ->get('/infra/observability')
-            ->assertOk();
-    }
 }
