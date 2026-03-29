@@ -17,6 +17,8 @@ const httpClient = {
       headers: {
         'X-User-Email': session.userEmail.value,
         'X-User-Name': session.userName.value,
+        Authorization: `Bearer ${session.authToken.value}`,
+        ...(session.activeSpaceId.value ? { 'X-Space-Id': String(session.activeSpaceId.value) } : {}),
       },
     });
     const payload = await response.json();
@@ -34,6 +36,8 @@ const httpClient = {
         'Content-Type': 'application/json',
         'X-User-Email': session.userEmail.value,
         'X-User-Name': session.userName.value,
+        Authorization: `Bearer ${session.authToken.value}`,
+        ...(session.activeSpaceId.value ? { 'X-Space-Id': String(session.activeSpaceId.value) } : {}),
       },
       body: JSON.stringify(payload),
     });
@@ -86,6 +90,23 @@ async function toggleTheme() {
 </template>
 
 <style scoped>
+.profile-card {
+  position: relative;
+}
+
+.profile-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(130deg, rgba(45, 212, 191, 0.45), rgba(59, 130, 246, 0.2));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
 .profile-top {
   display: flex;
   justify-content: space-between;

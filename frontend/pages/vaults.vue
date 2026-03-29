@@ -12,10 +12,21 @@ type Vault = {
 
 type VaultTransaction = {
   id: number;
+  vault_name?: string;
   type: 'deposit' | 'withdraw';
   amount: number;
+  category?: string;
   description: string;
   created_at: string;
+};
+
+type VaultInsights = {
+  total_balance: number;
+  total_target: number;
+  progress_percent: number;
+  monthly_deposits: number;
+  monthly_withdrawals: number;
+  monthly_net: number;
 };
 
 const session = useDemoSession();
@@ -24,6 +35,8 @@ const currentTheme = ref<'light' | 'dark'>('light');
 const vaults = ref<Vault[]>([]);
 const selectedVault = ref<Vault | null>(null);
 const transactions = ref<VaultTransaction[]>([]);
+const recentTransactions = ref<VaultTransaction[]>([]);
+const insights = ref<VaultInsights | null>(null);
 const message = ref('');
 
 const newVaultName = ref('');
@@ -31,6 +44,7 @@ const newVaultTarget = ref<number | null>(null);
 const txType = ref<'deposit' | 'withdraw'>('deposit');
 const txAmount = ref<number | null>(null);
 const txDescription = ref('');
+const txCategory = ref('geral');
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -40,6 +54,8 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
       'Content-Type': 'application/json',
       'X-User-Email': session.userEmail.value,
       'X-User-Name': session.userName.value,
+      Authorization: `Bearer ${session.authToken.value}`,
+      ...(session.activeSpaceId.value ? { 'X-Space-Id': String(session.activeSpaceId.value) } : {}),
       ...(options.headers ?? {}),
     },
   });
@@ -62,6 +78,16 @@ async function loadVaults(selectId?: number): Promise<void> {
     selectedVault.value = null;
     transactions.value = [];
   }
+}
+
+async function loadInsights(): Promise<void> {
+  const response = await api<{ data: VaultInsights }>('/api/vaults/insights');
+  insights.value = response.data;
+}
+
+async function loadRecentTransactions(): Promise<void> {
+  const response = await api<{ data: VaultTransaction[] }>('/api/transactions/recent?limit=8');
+  recentTransactions.value = response.data;
 }
 
 async function loadTransactions(vaultId: number): Promise<void> {
@@ -93,14 +119,18 @@ async function addTransaction(): Promise<void> {
     body: JSON.stringify({
       type: txType.value,
       amount: txAmount.value,
+      category: txCategory.value,
       description: txDescription.value,
     }),
   });
 
   txAmount.value = null;
   txDescription.value = '';
+  txCategory.value = 'geral';
   message.value = 'Movimentação registrada com sucesso.';
   await loadVaults(selectedVault.value.id);
+  await loadInsights();
+  await loadRecentTransactions();
 }
 
 function toggleTheme() {
@@ -118,6 +148,8 @@ onMounted(async () => {
 
   try {
     await loadVaults();
+    await loadInsights();
+    await loadRecentTransactions();
   } catch (error) {
     message.value = (error as Error).message;
   }
@@ -129,6 +161,25 @@ onMounted(async () => {
   <section>
     <h1>Cofres e Movimentações</h1>
     <p class="muted">Organize objetivos e registre depósitos/saques.</p>
+
+    <div v-if="insights" class="vault-grid">
+      <article class="kpi-card">
+        <span>Saldo total</span>
+        <strong>R$ {{ insights.total_balance.toFixed(2) }}</strong>
+      </article>
+      <article class="kpi-card">
+        <span>Meta total</span>
+        <strong>R$ {{ insights.total_target.toFixed(2) }}</strong>
+      </article>
+      <article class="kpi-card">
+        <span>Progresso das metas</span>
+        <strong>{{ insights.progress_percent.toFixed(1) }}%</strong>
+      </article>
+      <article class="kpi-card">
+        <span>Fluxo do mês</span>
+        <strong :style="{ color: insights.monthly_net >= 0 ? '#16a34a' : '#dc2626' }">R$ {{ insights.monthly_net.toFixed(2) }}</strong>
+      </article>
+    </div>
 
     <div class="toolbar">
       <input v-model="newVaultName" placeholder="Nome do cofre" />
@@ -156,6 +207,13 @@ onMounted(async () => {
           <option value="deposit">Depósito</option>
           <option value="withdraw">Saque</option>
         </select>
+        <select v-model="txCategory">
+          <option value="geral">Geral</option>
+          <option value="reserva">Reserva</option>
+          <option value="lazer">Lazer</option>
+          <option value="moradia">Moradia</option>
+          <option value="investimento">Investimento</option>
+        </select>
         <input v-model.number="txAmount" type="number" min="0.01" step="0.01" placeholder="Valor" />
         <input v-model="txDescription" placeholder="Descrição" />
         <button type="button" class="btn btn-primary" @click="addTransaction">Registrar movimentação</button>
@@ -163,7 +221,19 @@ onMounted(async () => {
       <ul class="transaction-list">
         <li v-for="transaction in transactions" :key="transaction.id" class="transaction-item">
           {{ transaction.type === 'deposit' ? 'Depósito' : 'Saque' }} · R$ {{ Number(transaction.amount).toFixed(2) }}
+          <span v-if="transaction.category">· {{ transaction.category }}</span>
           <span v-if="transaction.description">· {{ transaction.description }}</span>
+        </li>
+      </ul>
+    </div>
+
+    <div v-if="recentTransactions.length" class="transaction-panel">
+      <h2>Movimentações recentes (geral)</h2>
+      <ul class="transaction-list">
+        <li v-for="transaction in recentTransactions" :key="`recent-${transaction.id}`" class="transaction-item">
+          {{ transaction.vault_name }} · {{ transaction.type === 'deposit' ? 'Depósito' : 'Saque' }}
+          · R$ {{ Number(transaction.amount).toFixed(2) }}
+          <span v-if="transaction.category">· {{ transaction.category }}</span>
         </li>
       </ul>
     </div>
@@ -190,12 +260,27 @@ onMounted(async () => {
 .vault-item {
   text-align: left;
   min-height: 54px;
+  border-color: color-mix(in oklab, var(--primary-color), var(--border-color) 60%);
+}
+
+.kpi-card {
+  border: 1px solid color-mix(in oklab, var(--primary-color), var(--border-color) 70%);
+  border-radius: 12px;
+  padding: 12px;
+  background: color-mix(in oklab, var(--card-color), white 6%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kpi-card span {
+  color: var(--muted-color);
 }
 
 .transaction-panel {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px dashed color-mix(in oklab, var(--primary-color), var(--border-color) 55%);
 }
 
 .transaction-list {

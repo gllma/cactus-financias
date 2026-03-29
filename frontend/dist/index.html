@@ -6,20 +6,20 @@
   <title>Cactus Financias</title>
   <style>
     :root {
-      --bg: #f3f4f6;
-      --surface: #ffffff;
+      --bg: #042f2e;
+      --surface: rgba(255,255,255,.92);
       --text: #0f172a;
       --muted: #475569;
       --primary: #0f766e;
-      --border: #e2e8f0;
+      --border: rgba(100,116,139,.35);
     }
     html[data-theme='dark'] {
-      --bg: #020617;
-      --surface: #0f172a;
+      --bg: #031b1e;
+      --surface: rgba(9,22,42,.85);
       --text: #e2e8f0;
       --muted: #94a3b8;
       --primary: #14b8a6;
-      --border: #1e293b;
+      --border: rgba(71,85,105,.45);
     }
     * { box-sizing: border-box; }
     body {
@@ -28,17 +28,20 @@
       background: var(--bg);
       color: var(--text);
     }
-    .container { max-width: 980px; margin: 0 auto; padding: 16px; }
+    .container { max-width: 980px; margin: 0 auto; padding: 16px; position: relative; z-index: 1; }
+    body:before, body:after{content:'';position:fixed;border-radius:999px;pointer-events:none;z-index:0}
+    body:before{width:540px;height:540px;left:-120px;top:-200px;background:radial-gradient(circle,rgba(45,212,191,.25),transparent 70%)}
+    body:after{width:420px;height:420px;right:-90px;bottom:-150px;background:radial-gradient(circle,rgba(59,130,246,.2),transparent 70%)}
     .topbar {
       display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+      background: linear-gradient(145deg, rgba(5,150,105,.92), rgba(6,78,59,.95)); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 12px; color:#fff;
     }
-    .topbar input, .topbar select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); }
+    .topbar input, .topbar select { padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: #fff; }
     .btn { padding: 8px 12px; border: 0; border-radius: 8px; background: var(--primary); color: #fff; cursor: pointer; }
     .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
     .header {
       margin-top: 12px; display: flex; align-items: center; justify-content: space-between;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; backdrop-filter: blur(10px);
     }
     .avatar {
       width: 42px; height: 42px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
@@ -82,6 +85,7 @@
     </section>
 
     <nav>
+      <a href="#/spaces" id="link-spaces">Espaços</a>
       <a href="#/profile" id="link-profile">Perfil</a>
       <a href="#/vaults" id="link-vaults">Cofres</a>
       <a href="#/observability" id="link-observability">Observabilidade</a>
@@ -92,7 +96,7 @@
 
 <script>
 const API=window.CACTUS_API_BASE_URL || `${location.protocol}//${location.hostname}:8000`;
-const state={name:'Maria Silva',email:'admin@cactus.com',theme:'light'};
+const state={name:'Maria Silva',email:'admin@cactus.com',theme:'light',token:'',activeSpaceId:null};
 
 function initials(name){return name.trim().split(/\s+/).slice(0,2).map(n=>n[0]?.toUpperCase()||'').join('');}
 function applyTheme(){document.documentElement.setAttribute('data-theme', state.theme);}
@@ -118,11 +122,102 @@ function saveSession(){
 }
 
 async function api(path,opts={}){
-  const headers=Object.assign({'X-User-Email':state.email,'X-User-Name':state.name,'Content-Type':'application/json'},opts.headers||{});
+  const headers=Object.assign({
+    'X-User-Email':state.email,
+    'X-User-Name':state.name,
+    'Content-Type':'application/json',
+    ...(state.token?{'Authorization':`Bearer ${state.token}`}:{})
+  },opts.headers||{});
+  if(state.activeSpaceId){ headers['X-Space-Id']=String(state.activeSpaceId); }
   const r=await fetch(API+path,{...opts,headers});
   const data=await r.json();
   if(!r.ok) throw new Error(data.message||'Erro');
   return data;
+}
+
+async function renderLogin(){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <section class='card'>
+      <h2>Login</h2>
+      <p style='color:var(--muted)'>Entre para acessar seus espaços.</p>
+      <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px'>
+        <input id='login-name' placeholder='Nome' value='${state.name}' />
+        <input id='login-email' placeholder='E-mail' value='${state.email}' />
+        <input id='login-pass' type='password' placeholder='Senha' value='123456' />
+        <button id='do-login' class='btn'>Entrar</button>
+      </div>
+      <div id='msg'></div>
+    </section>`;
+
+  app.querySelector('#do-login').onclick=async()=>{
+    state.name=app.querySelector('#login-name').value;
+    state.email=app.querySelector('#login-email').value;
+    const password=app.querySelector('#login-pass').value;
+    try{
+      const res=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:state.email,name:state.name,password})});
+      state.token=res.data.token;
+      state.activeSpaceId=res.data.active_space_id;
+      saveSession();
+      location.hash='#/spaces';
+    }catch(e){ app.querySelector('#msg').textContent=e.message; }
+  };
+}
+
+async function renderSpaces(){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <section class='card'>
+      <h2>Gerenciamento de Espaços</h2>
+      <div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px'>
+        <input id='space-name' placeholder='Nome do espaço' />
+        <button id='create-space' class='btn'>Criar espaço</button>
+      </div>
+      <div id='spaces-list'></div>
+      <div id='msg'></div>
+    </section>`;
+
+  const list=app.querySelector('#spaces-list');
+  const msg=app.querySelector('#msg');
+  async function loadSpaces(){
+    try{
+      const res=await api('/api/spaces');
+      const spaces=res.data||[];
+      list.innerHTML=spaces.map((s)=>`
+        <div style='padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px'>
+          <b>${s.name}</b> · ${s.role} · ${s.membership_status}
+          <div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:8px'>
+            <button class='btn secondary activate-space' data-id='${s.id}'>Ativar</button>
+            <input class='invite-email' data-id='${s.id}' placeholder='Convidar por e-mail' />
+            <button class='btn invite-space' data-id='${s.id}'>Convidar</button>
+          </div>
+        </div>`).join('') || "<p style='color:var(--muted)'>Sem espaços.</p>";
+
+      list.querySelectorAll('.activate-space').forEach((b)=>b.onclick=async()=>{
+        const id=Number(b.dataset.id);
+        await api('/api/auth/switch-space',{method:'POST',body:JSON.stringify({space_id:id})});
+        state.activeSpaceId=id; saveSession(); msg.textContent='Espaço ativo atualizado.';
+      });
+      list.querySelectorAll('.invite-space').forEach((b)=>b.onclick=async()=>{
+        const id=Number(b.dataset.id);
+        const email=list.querySelector(`.invite-email[data-id="${id}"]`).value;
+        await api(`/api/spaces/${id}/invite`,{method:'POST',body:JSON.stringify({email,role:'member'})});
+        msg.textContent='Convite enviado.';
+      });
+    }catch(e){ msg.textContent=e.message; }
+  }
+
+  app.querySelector('#create-space').onclick=async()=>{
+    try{
+      const name=app.querySelector('#space-name').value;
+      const res=await api('/api/spaces',{method:'POST',body:JSON.stringify({name})});
+      state.activeSpaceId=res.data.id; saveSession();
+      await loadSpaces();
+      msg.textContent='Espaço criado.';
+    }catch(e){ msg.textContent=e.message; }
+  };
+
+  await loadSpaces();
 }
 
 async function renderProfile(){
@@ -204,14 +299,26 @@ async function renderVaults(){
         <button id='create-vault' class='btn'>Criar cofre</button>
       </div>
 
+      <div id='vault-insights' class='grid' style='margin-bottom:10px'></div>
       <div id='vault-list' style='display:grid;gap:8px;margin-bottom:12px'></div>
       <div id='vault-ops'></div>
       <div id='msg'></div>
     </section>`;
 
+  const vaultInsights=app.querySelector('#vault-insights');
   const vaultList=app.querySelector('#vault-list');
   const vaultOps=app.querySelector('#vault-ops');
   const msg=app.querySelector('#msg');
+
+  async function loadInsights(){
+    const res=await api('/api/vaults/insights');
+    const i=res.data;
+    vaultInsights.innerHTML=`
+      <div class='metric'><div class='label'>Saldo total</div><div class='value'>R$ ${Number(i.total_balance).toFixed(2)}</div></div>
+      <div class='metric'><div class='label'>Meta total</div><div class='value'>R$ ${Number(i.total_target).toFixed(2)}</div></div>
+      <div class='metric'><div class='label'>Progresso</div><div class='value'>${Number(i.progress_percent).toFixed(1)}%</div></div>
+      <div class='metric'><div class='label'>Fluxo do mês</div><div class='value'>R$ ${Number(i.monthly_net).toFixed(2)}</div></div>`;
+  }
 
   async function loadVaults(selectedId=null){
     try{
@@ -252,25 +359,34 @@ async function renderVaults(){
               <option value='deposit'>Depósito</option>
               <option value='withdraw'>Saque</option>
             </select>
+            <select id='tx-category'>
+              <option value='geral'>Geral</option>
+              <option value='reserva'>Reserva</option>
+              <option value='lazer'>Lazer</option>
+              <option value='moradia'>Moradia</option>
+              <option value='investimento'>Investimento</option>
+            </select>
             <input id='tx-amount' type='number' min='0.01' step='0.01' placeholder='Valor' />
             <input id='tx-description' placeholder='Descrição (opcional)' />
             <button id='add-tx' class='btn'>Registrar</button>
           </div>
           <div style='margin-top:10px'>
-            ${txs.length ? txs.map((t)=>`<div style='padding:8px 0;border-bottom:1px solid var(--border)'>${t.type==='deposit'?'⬆️ Depósito':'⬇️ Saque'} · R$ ${Number(t.amount).toFixed(2)} ${t.description?`· ${t.description}`:''}</div>`).join('') : "<div style='color:var(--muted)'>Sem movimentações.</div>"}
+            ${txs.length ? txs.map((t)=>`<div style='padding:8px 0;border-bottom:1px solid var(--border)'>${t.type==='deposit'?'⬆️ Depósito':'⬇️ Saque'} · R$ ${Number(t.amount).toFixed(2)} ${t.category?`· ${t.category}`:''} ${t.description?`· ${t.description}`:''}</div>`).join('') : "<div style='color:var(--muted)'>Sem movimentações.</div>"}
           </div>
         </div>`;
 
       vaultOps.querySelector('#add-tx').onclick=async()=>{
         const type=vaultOps.querySelector('#tx-type').value;
+        const category=vaultOps.querySelector('#tx-category').value;
         const amount=Number(vaultOps.querySelector('#tx-amount').value);
         const description=vaultOps.querySelector('#tx-description').value;
         try{
           await api(`/api/vaults/${vaultId}/transactions`,{
             method:'POST',
-            body:JSON.stringify({type,amount,description})
+            body:JSON.stringify({type,category,amount,description})
           });
           msg.textContent='Movimentação registrada com sucesso.';
+          await loadInsights();
           await loadVaults(vaultId);
         }catch(e){
           msg.textContent=e.message;
@@ -289,25 +405,31 @@ async function renderVaults(){
       app.querySelector('#vault-name').value='';
       app.querySelector('#vault-target').value='';
       msg.textContent='Cofre criado com sucesso.';
+      await loadInsights();
       await loadVaults(res.data.id);
     }catch(e){
       msg.textContent=e.message;
     }
   };
 
+  await loadInsights();
   await loadVaults();
 }
 
 function activateNav(hash){
+  document.getElementById('link-spaces').classList.toggle('active', hash === '#/spaces');
   document.getElementById('link-profile').classList.toggle('active', hash === '#/profile');
   document.getElementById('link-vaults').classList.toggle('active', hash === '#/vaults');
   document.getElementById('link-observability').classList.toggle('active', hash === '#/observability');
 }
 
 function route(){
-  const h=location.hash||'#/profile';
+  const h=location.hash|| (state.token ? '#/spaces' : '#/login');
+  if(!state.token && h!=='#/login'){ location.hash='#/login'; return; }
   activateNav(h);
-  if(h==='#/observability') renderObs();
+  if(h==='#/login') renderLogin();
+  else if(h==='#/spaces') renderSpaces();
+  else if(h==='#/observability') renderObs();
   else if(h==='#/vaults') renderVaults();
   else renderProfile();
 }

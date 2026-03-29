@@ -30,8 +30,12 @@ defineEmits<{
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--card-color);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  margin: 16px;
+  background: linear-gradient(150deg, rgba(5, 150, 105, 0.92), rgba(6, 78, 59, 0.95));
+  color: #f8fafc;
+  box-shadow: 0 16px 28px -22px rgba(4, 120, 87, 0.9);
 }
 
 .app-title {
@@ -46,12 +50,15 @@ defineEmits<{
 }
 
 .theme-label {
-  color: var(--muted-color);
+  color: rgba(240, 253, 250, 0.82);
 }
 
 .theme-button {
   cursor: pointer;
   width: auto;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 @media (max-width: 760px) {

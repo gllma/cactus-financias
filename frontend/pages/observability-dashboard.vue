@@ -16,6 +16,8 @@ const httpClient = {
       headers: {
         'X-User-Email': session.userEmail.value,
         'X-User-Name': session.userName.value,
+        Authorization: `Bearer ${session.authToken.value}`,
+        ...(session.activeSpaceId.value ? { 'X-Space-Id': String(session.activeSpaceId.value) } : {}),
       },
     });
     const payload = await response.json();
@@ -94,12 +96,13 @@ async function refreshSummary() {
 
 .metric-card {
   padding: 14px;
-  border: 1px solid var(--border-color);
+  border: 1px solid color-mix(in oklab, var(--primary-color), var(--border-color) 62%);
   border-radius: 12px;
-  background: color-mix(in oklab, var(--card-color), black 2%);
+  background: color-mix(in oklab, var(--card-color), white 5%);
   display: flex;
   flex-direction: column;
   gap: 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .metric-card span {
