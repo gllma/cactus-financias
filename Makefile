@@ -5,12 +5,13 @@ COMPOSE := docker compose
 BACKEND_ENV := backend/.env
 FRONTEND_ENV := frontend/.env
 SERVICE ?= backend
+NODE_IMAGE := node:22-alpine
 
-.PHONY: help setup install build deploy up down restart logs ps health lint sync ci-test clean in in-backend in-frontend in-db doctor rebuild
+.PHONY: help setup install build deploy deploy-backend deploy-frontend up down restart logs ps health lint sync ci-test clean in in-backend in-frontend in-db doctor rebuild
 
 help: ## Exibe comandos disponíveis
 	@echo "Comandos disponíveis:"
-	@grep -E '^[a-zA-Z_-]+:.*?## ' Makefile | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## ' Makefile | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
 
 setup: ## Cria .env de backend/frontend se necessário
 	@[ -f $(BACKEND_ENV) ] || cp backend/.env.example $(BACKEND_ENV)
@@ -23,10 +24,28 @@ build: setup ## Builda todas as imagens Docker
 install: setup build up health ## Instala completamente e valida o projeto
 	@echo "Instalação completa finalizada"
 
-deploy: setup ## Atualiza o ambiente após alterações de código
+deploy: setup ## Atualiza frontend/backend e roda comandos pós-deploy
 	$(COMPOSE) up -d --build --force-recreate --remove-orphans
+	@$(MAKE) deploy-backend
+	@$(MAKE) deploy-frontend
 	@$(MAKE) health
 	@echo "Deploy atualizado concluído"
+
+deploy-backend: ## Executa optimize:clear e migrate no backend (quando Laravel estiver disponível)
+	@$(COMPOSE) exec -T backend sh -lc '
+		set -e; \
+		if [ -f backend/artisan ]; then \
+			php backend/artisan optimize:clear; \
+			php backend/artisan migrate --force; \
+		else \
+			echo "[deploy-backend] backend/artisan não encontrado; pulando optimize:clear e migrate."; \
+		fi'
+
+deploy-frontend: ## Executa npm install + npm run build do frontend em container Node
+	@docker run --rm \
+		-v "$(PWD)/frontend:/app" \
+		-w /app \
+		$(NODE_IMAGE) sh -lc 'npm install --no-audit --no-fund && npm run build'
 
 up: setup ## Sobe todo o ambiente
 	$(COMPOSE) up -d --build
