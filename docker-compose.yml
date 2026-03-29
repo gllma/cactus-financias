@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      OBSERVABILITY_ALLOWLIST: admin@cactus.com,1
+    ports:
+      - '8000:8000'
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - '3000:80'
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cactus_financias
+      POSTGRES_USER: cactus
+      POSTGRES_PASSWORD: cactus
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

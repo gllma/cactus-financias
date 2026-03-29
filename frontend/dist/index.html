@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cactus Financias</title>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #0f766e;
+      --border: #e2e8f0;
+    }
+    html[data-theme='dark'] {
+      --bg: #020617;
+      --surface: #0f172a;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --primary: #14b8a6;
+      --border: #1e293b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .container { max-width: 980px; margin: 0 auto; padding: 16px; }
+    .topbar {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+    }
+    .topbar input { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); }
+    .btn { padding: 8px 12px; border: 0; border-radius: 8px; background: var(--primary); color: #fff; cursor: pointer; }
+    .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .header {
+      margin-top: 12px; display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+    }
+    .avatar {
+      width: 42px; height: 42px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: #fff; font-weight: 700;
+    }
+    nav { margin: 12px 0; }
+    nav a {
+      text-decoration: none; margin-right: 12px; color: var(--muted); font-weight: 600;
+    }
+    nav a.active { color: var(--primary); }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; margin-top: 12px; }
+    .metric { border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+    .metric .label { color: var(--muted); font-size: 13px; }
+    .metric .value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+    #msg { margin-top: 10px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <input id="name" placeholder="Nome" value="Maria Silva"/>
+      <input id="email" placeholder="E-mail" value="admin@cactus.com"/>
+      <button id="saveSession" class="btn">Salvar sessão</button>
+      <button id="toggleTheme" class="btn secondary">Alternar tema</button>
+    </header>
+
+    <section class="header">
+      <div>
+        <div style="font-weight:700">Cactus Financias</div>
+        <div id="welcome" style="color:var(--muted);font-size:14px"></div>
+      </div>
+      <div class="avatar" id="avatar"></div>
+    </section>
+
+    <nav>
+      <a href="#/profile" id="link-profile">Perfil</a>
+      <a href="#/observability" id="link-observability">Observabilidade</a>
+    </nav>
+
+    <main id="app"></main>
+  </div>
+
+<script>
+const API=window.CACTUS_API_BASE_URL || `${location.protocol}//${location.hostname}:8000`;
+const state={name:'Maria Silva',email:'admin@cactus.com',theme:'light'};
+
+function initials(name){return name.trim().split(/\s+/).slice(0,2).map(n=>n[0]?.toUpperCase()||'').join('');}
+function applyTheme(){document.documentElement.setAttribute('data-theme', state.theme);}
+function hydrateHeader(){
+  document.getElementById('welcome').textContent=`Usuário: ${state.name} (${state.email})`;
+  document.getElementById('avatar').textContent=initials(state.name);
+  document.getElementById('name').value=state.name;
+  document.getElementById('email').value=state.email;
+}
+
+function loadSession(){
+  const raw=localStorage.getItem('cactus_demo_session');
+  if(!raw) return;
+  try{Object.assign(state,JSON.parse(raw));}catch{}
+}
+
+function saveSession(){
+  state.name=document.getElementById('name').value;
+  state.email=document.getElementById('email').value;
+  localStorage.setItem('cactus_demo_session',JSON.stringify(state));
+  hydrateHeader();
+  render();
+}
+
+async function api(path,opts={}){
+  const headers=Object.assign({'X-User-Email':state.email,'X-User-Name':state.name,'Content-Type':'application/json'},opts.headers||{});
+  const r=await fetch(API+path,{...opts,headers});
+  const data=await r.json();
+  if(!r.ok) throw new Error(data.message||'Erro');
+  return data;
+}
+
+async function renderProfile(){
+  const app=document.getElementById('app');
+  try{const res=await api('/api/profile/theme');state.theme=res.data.theme;applyTheme();}catch{}
+
+  app.innerHTML=`
+    <section class='card'>
+      <h2>Preferências de Perfil</h2>
+      <p style='color:var(--muted)'>Persistência de tema por usuário com backend.</p>
+      <div style='display:flex;gap:8px'>
+        <button class='btn' id='light'>Tema Claro</button>
+        <button class='btn secondary' id='dark'>Tema Escuro</button>
+      </div>
+      <div id='msg'>Tema atual: <b>${state.theme}</b></div>
+    </section>`;
+
+  app.querySelector('#light').onclick=()=>setTheme('light');
+  app.querySelector('#dark').onclick=()=>setTheme('dark');
+}
+
+async function setTheme(theme){
+  try{
+    const res=await api('/api/profile/theme',{method:'PATCH',body:JSON.stringify({theme})});
+    state.theme=res.data.theme;
+    localStorage.setItem('cactus_demo_session',JSON.stringify(state));
+    applyTheme();
+    renderProfile();
+  }catch(e){
+    document.getElementById('msg').textContent=e.message;
+  }
+}
+
+async function renderObs(){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <section class='card'>
+      <h2>Painel de Observabilidade</h2>
+      <div style='display:flex;gap:8px;align-items:center'>
+        <label>Janela(min): <input id='period' type='number' min='5' max='1440' value='60' style='width:90px'/></label>
+        <button id='load' class='btn'>Atualizar resumo</button>
+      </div>
+      <div class='grid' id='metrics'></div>
+      <div id='msg' style='margin-top:8px'></div>
+    </section>`;
+
+  app.querySelector('#load').onclick=async()=>{
+    const p=app.querySelector('#period').value;
+    try{
+      const res=await api('/api/infra/observability/summary?period_minutes='+p);
+      const metrics=app.querySelector('#metrics');
+      metrics.innerHTML=`
+        <div class='metric'><div class='label'>Falhas em jobs</div><div class='value'>${res.data.failed_jobs}</div></div>
+        <div class='metric'><div class='label'>Jobs pendentes</div><div class='value'>${res.data.pending_jobs}</div></div>
+        <div class='metric'><div class='label'>Exceções recentes</div><div class='value'>${res.data.recent_exceptions}</div></div>
+        <div class='metric'><div class='label'>Usuários totais</div><div class='value'>${res.data.total_users}</div></div>
+        <div class='metric'><div class='label'>Usuários em tema escuro</div><div class='value'>${res.data.dark_theme_users}</div></div>
+        <div class='metric'><div class='label'>Uptime simulado</div><div class='value'>${res.data.simulated_uptime_percent}%</div></div>`;
+      app.querySelector('#msg').textContent=`Gerado em: ${res.meta.generated_at}`;
+    }catch(e){
+      app.querySelector('#metrics').innerHTML='';
+      app.querySelector('#msg').textContent=e.message;
+    }
+  };
+
+  app.querySelector('#load').click();
+}
+
+function activateNav(hash){
+  document.getElementById('link-profile').classList.toggle('active', hash === '#/profile');
+  document.getElementById('link-observability').classList.toggle('active', hash === '#/observability');
+}
+
+function route(){
+  const h=location.hash||'#/profile';
+  activateNav(h);
+  if(h==='#/observability') renderObs();
+  else renderProfile();
+}
+
+document.getElementById('saveSession').onclick=saveSession;
+document.getElementById('toggleTheme').onclick=()=>setTheme(state.theme==='light'?'dark':'light');
+window.addEventListener('hashchange',route);
+
+loadSession();
+hydrateHeader();
+applyTheme();
+route();
+</script>
+</body>
+</html>
