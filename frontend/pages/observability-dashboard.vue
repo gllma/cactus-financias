@@ -7,10 +7,11 @@ import { ObservabilityService } from '../modules/observability/services/observab
 import { useDemoSession } from '../src/useDemoSession';
 
 const session = useDemoSession();
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const httpClient = {
   get: async <T>(url: string): Promise<T> => {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${url}`, {
+    const response = await fetch(`${apiBaseUrl}${url}`, {
       credentials: 'include',
       headers: {
         'X-User-Email': session.userEmail.value,

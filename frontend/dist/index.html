@@ -85,7 +85,7 @@
   </div>
 
 <script>
-const API='http://localhost:8000';
+const API=window.CACTUS_API_BASE_URL || `${location.protocol}//${location.hostname}:8000`;
 const state={name:'Maria Silva',email:'admin@cactus.com',theme:'light'};
 
 function initials(name){return name.trim().split(/\s+/).slice(0,2).map(n=>n[0]?.toUpperCase()||'').join('');}
