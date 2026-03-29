@@ -20,9 +20,4 @@ class ProfilePreferenceService
 
         return $this->userPreferenceRepository->updateThemePreference($user, $theme);
     }
-
-    public function getThemePreference(User $user): string
-    {
-        return $user->theme_preference ?? User::THEME_LIGHT;
-    }
 }

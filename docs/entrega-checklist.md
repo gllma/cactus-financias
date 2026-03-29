@@ -15,8 +15,6 @@
 - [x] Bloqueio com `403 Forbidden` para usuário não autorizado.
 - [x] Validação por e-mail e/ou ID na allowlist.
 - [x] Rota protegida para painel de observabilidade.
-- [x] Controller/Service/Repository para resumo inicial do dashboard de observabilidade.
-- [x] View inicial do painel de observabilidade com métricas resumidas.
 - [x] Documento de spike técnico da stack de observabilidade.
 
 ### Testes
@@ -29,6 +27,7 @@
 ### Backend (bootstrap do projeto)
 - [ ] Integrar os arquivos criados ao esqueleto Laravel completo (estrutura com `artisan`, providers e bootstrap real).
 - [ ] Registrar middleware no fluxo oficial da aplicação (quando bootstrap completo estiver presente).
+- [ ] Implementar view/página real do dashboard de observabilidade.
 
 ### Frontend (integração de aplicação)
 - [ ] Integrar módulos de perfil em páginas reais do app (login/header/configurações).
