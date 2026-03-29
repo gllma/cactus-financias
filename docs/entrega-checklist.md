@@ -19,6 +19,7 @@
 - [x] Controller/Service/Repository para resumo inicial do dashboard de observabilidade.
 - [x] View inicial do painel de observabilidade com métricas resumidas.
 - [x] Endpoint de API para resumo do painel de observabilidade.
+- [x] Métricas ampliadas no resumo de observabilidade (usuários e adoção de tema).
 - [x] Módulo frontend de observabilidade com arquitetura por contexto.
 - [x] Documento de spike técnico da stack de observabilidade.
 

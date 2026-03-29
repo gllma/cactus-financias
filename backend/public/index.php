@@ -77,11 +77,17 @@ if ($uri === '/api/infra/observability/summary' && $method === 'GET') {
         jsonResponse(['message' => 'period_minutes deve estar entre 5 e 1440.'], 422);
     }
 
+    $usersCount = (int) $database->query('SELECT COUNT(*) FROM users')->fetchColumn();
+    $darkThemeUsers = (int) $database->query("SELECT COUNT(*) FROM users WHERE theme_preference = 'dark'")->fetchColumn();
+
     jsonResponse([
         'data' => [
             'failed_jobs' => 2,
             'pending_jobs' => 5,
             'recent_exceptions' => 1,
+            'total_users' => $usersCount,
+            'dark_theme_users' => $darkThemeUsers,
+            'simulated_uptime_percent' => 99.95,
         ],
         'meta' => [
             'generated_at' => gmdate('c'),

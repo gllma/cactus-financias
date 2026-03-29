@@ -18,6 +18,9 @@ export class ObservabilityService {
       response.data.failed_jobs,
       response.data.pending_jobs,
       response.data.recent_exceptions,
+      response.data.total_users,
+      response.data.dark_theme_users,
+      response.data.simulated_uptime_percent,
       response.meta.generated_at,
     );
   }

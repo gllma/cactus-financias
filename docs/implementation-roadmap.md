@@ -9,7 +9,7 @@
 ## Fase 2 — Observabilidade Inicial (Em andamento)
 - [x] Dashboard web inicial com métricas resumidas.
 - [x] Endpoint de API para resumo de observabilidade (consumo por frontend/custom dashboard).
-- [ ] Evoluir métricas conforme decisão do spike (Pulse/Horizon/Telescope ou custom).
+- [x] Evoluir métricas do resumo (usuários totais, adoção de tema escuro e uptime simulado).
 
 ## Fase 3 — Integração de Aplicação (Pendente)
 - [x] Conectar módulos frontend de perfil em página de preferências.

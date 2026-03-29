@@ -52,6 +52,9 @@ async function refreshSummary() {
       <p>Falhas em jobs: {{ handler.summary.failedJobs }}</p>
       <p>Jobs pendentes: {{ handler.summary.pendingJobs }}</p>
       <p>Exceções recentes: {{ handler.summary.recentExceptions }}</p>
+      <p>Usuários totais: {{ handler.summary.totalUsers }}</p>
+      <p>Usuários em tema escuro: {{ handler.summary.darkThemeUsers }}</p>
+      <p>Uptime simulado: {{ handler.summary.simulatedUptimePercent }}%</p>
       <p>Gerado em: {{ handler.summary.generatedAt }}</p>
     </div>
   </section>
