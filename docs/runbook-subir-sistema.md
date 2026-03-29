@@ -1,7 +1,5 @@
 # Runbook — Subir o Cactus Financias (MVP)
 
-> Para guia completo de instalação + subida, veja também: `docs/instalacao-e-execucao.md`.
-
 ## Pré-requisitos
 - Docker + Docker Compose
 - Git
@@ -33,8 +31,6 @@ Serviços expostos:
 ## 3.1) Fluxo para avaliação em navegador
 - Abra `http://localhost:3000/profile-preferences` para validar avatar por iniciais e troca de tema persistida em backend SQLite.
 - Abra `http://localhost:3000/observability-dashboard` para validar carregamento do resumo de observabilidade.
-- No topo da aplicação, altere Nome/E-mail e clique em **Salvar sessão** para simular usuários diferentes.
-- Para validar bloqueio de observabilidade (403), use um e-mail fora da `OBSERVABILITY_ALLOWLIST`.
 
 ## 4) Validar saúde básica
 ```bash
