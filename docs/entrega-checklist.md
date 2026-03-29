@@ -9,12 +9,17 @@
 - [x] Service e Repository separados para regra de persistência.
 - [x] Componente de avatar por iniciais sem upload de imagem.
 - [x] Handler frontend para carregar tema persistido e atualizar tema.
+- [x] Handler frontend para aplicar tema persistido no layout global.
 
 ### FUNC-10 — Painel de Observabilidade
 - [x] Middleware de proteção por allowlist de infraestrutura.
 - [x] Bloqueio com `403 Forbidden` para usuário não autorizado.
 - [x] Validação por e-mail e/ou ID na allowlist.
 - [x] Rota protegida para painel de observabilidade.
+- [x] Controller/Service/Repository para resumo inicial do dashboard de observabilidade.
+- [x] View inicial do painel de observabilidade com métricas resumidas.
+- [x] Endpoint de API para resumo do painel de observabilidade.
+- [x] Módulo frontend de observabilidade com arquitetura por contexto.
 - [x] Documento de spike técnico da stack de observabilidade.
 
 ### Testes
@@ -27,16 +32,19 @@
 ### Backend (bootstrap do projeto)
 - [ ] Integrar os arquivos criados ao esqueleto Laravel completo (estrutura com `artisan`, providers e bootstrap real).
 - [ ] Registrar middleware no fluxo oficial da aplicação (quando bootstrap completo estiver presente).
-- [ ] Implementar view/página real do dashboard de observabilidade.
 
 ### Frontend (integração de aplicação)
-- [ ] Integrar módulos de perfil em páginas reais do app (login/header/configurações).
-- [ ] Aplicar tema carregado em runtime no layout global da aplicação.
-- [ ] Conectar `AvatarInitials.vue` nos pontos reais de perfil/cabeçalho.
+- [x] Integrar módulos de perfil em página de preferências.
+- [x] Aplicar tema carregado em runtime no layout global da aplicação.
+- [x] Conectar `AvatarInitials.vue` nos pontos reais de perfil/cabeçalho.
+- [x] Integrar tela inicial de observabilidade no frontend.
 
 ### Qualidade e pipeline
 - [ ] Executar suíte automatizada completa em ambiente com Laravel/Nuxt configurados.
-- [ ] Adicionar pipeline CI para testes backend/frontend.
+- [x] Adicionar pipeline CI inicial para validação de sintaxe PHP backend.
+- [x] Adicionar execução condicional de testes de feature no CI quando PHPUnit estiver disponível.
+- [x] Disponibilizar runbook e script para subir ambiente local.
+- [x] Disponibilizar fluxo navegável para avaliação funcional em navegador.
 
 ## Regra operacional de acompanhamento
 A partir desta entrega, todo reporte deve incluir obrigatoriamente:

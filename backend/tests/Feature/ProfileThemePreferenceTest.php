@@ -26,4 +26,16 @@ class ProfileThemePreferenceTest extends TestCase
             'theme_preference' => User::THEME_DARK,
         ]);
     }
+
+    public function test_authenticated_user_can_load_theme_preference_from_database(): void
+    {
+        $user = User::factory()->create([
+            'theme_preference' => User::THEME_DARK,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson('/api/profile/theme')
+            ->assertOk()
+            ->assertJsonPath('data.theme', User::THEME_DARK);
+    }
 }
