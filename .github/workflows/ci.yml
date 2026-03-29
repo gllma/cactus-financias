@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  backend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - name: PHP lint backend
+        run: |
+          for f in $(find backend -name '*.php'); do
+            php -l "$f"
+          done
+      - name: Run backend feature tests when PHPUnit is available
+        run: |
+          if [ -x backend/vendor/bin/phpunit ]; then
+            cd backend
+            ./vendor/bin/phpunit --testsuite=Feature
+          else
+            echo "PHPUnit não encontrado em backend/vendor/bin/phpunit; etapa ignorada."
+          fi

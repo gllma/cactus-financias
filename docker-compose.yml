@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  backend:
+    image: php:8.3-cli
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: sh -c "php -S 0.0.0.0:8000 backend/public/index.php"
+    ports:
+      - '8000:8000'
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: sh -c "if [ -f frontend/package.json ]; then npm install && npm run dev -- --host 0.0.0.0 --port 3000; else echo 'frontend/package.json não encontrado'; tail -f /dev/null; fi"
+    ports:
+      - '3000:3000'
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cactus_financias
+      POSTGRES_USER: cactus
+      POSTGRES_PASSWORD: cactus
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
