@@ -5,9 +5,7 @@ COMPOSE := docker compose
 BACKEND_ENV := backend/.env
 FRONTEND_ENV := frontend/.env
 
-.PHONY: help setup build up down restart logs ps health lint sync deploy install ci-test clean in in-backend in-frontend in-db
-
-SERVICE ?= backend
+.PHONY: help setup build up down restart logs ps health lint sync deploy install ci-test clean
 
 help: ## Exibe comandos disponíveis
 	@echo "Comandos disponíveis:"
@@ -58,15 +56,3 @@ deploy: build up health ## Pipeline local de build+subida+healthcheck
 
 clean: ## Remove containers e volumes
 	$(COMPOSE) down -v
-
-in: ## Entra no container informado em SERVICE (default: backend)
-	$(COMPOSE) exec $(SERVICE) sh
-
-in-backend: ## Entra no container backend
-	$(COMPOSE) exec backend sh
-
-in-frontend: ## Entra no container frontend
-	$(COMPOSE) exec frontend sh
-
-in-db: ## Entra no container db (psql shell)
-	$(COMPOSE) exec db sh
