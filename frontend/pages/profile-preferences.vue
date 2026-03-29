@@ -5,17 +5,30 @@ import AppHeader from '../components/AppHeader.vue';
 import { ProfileService } from '../modules/profile/services/profileService';
 import { useProfileThemeHandler } from '../modules/profile/handlers/useProfileThemeHandler';
 import { useApplyThemeHandler } from '../modules/profile/handlers/useApplyThemeHandler';
+import { useDemoSession } from '../src/useDemoSession';
+
+const session = useDemoSession();
 
 const httpClient = {
   get: async <T>(url: string): Promise<T> => {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${url}`, { credentials: 'include' });
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${url}`, {
+      credentials: 'include',
+      headers: {
+        'X-User-Email': session.userEmail.value,
+        'X-User-Name': session.userName.value,
+      },
+    });
     return response.json();
   },
   patch: async <T>(url: string, payload: unknown): Promise<T> => {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${url}`, {
       method: 'PATCH',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Email': session.userEmail.value,
+        'X-User-Name': session.userName.value,
+      },
       body: JSON.stringify(payload),
     });
 
@@ -40,10 +53,10 @@ async function toggleTheme() {
 </script>
 
 <template>
-  <AppHeader user-name="Maria Silva" :current-theme="handler.currentTheme" @toggleTheme="toggleTheme" />
+  <AppHeader :user-name="session.userName" :current-theme="handler.currentTheme" @toggleTheme="toggleTheme" />
   <section>
     <h1>Preferências de Perfil</h1>
-    <AvatarInitials name="Maria Silva" />
+    <AvatarInitials :name="session.userName" />
 
     <p>Tema atual: {{ handler.currentTheme }}</p>
     <button type="button" @click="setTheme('light')">Tema Claro</button>

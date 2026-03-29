@@ -1,7 +1,25 @@
 # Cactus Financias (MVP)
 
-Documentação principal para instalação e execução local:
+## Execução rápida
+```bash
+make install
+```
 
-- [Instalação e subida do projeto](docs/instalacao-e-execucao.md)
-- [Runbook operacional](docs/runbook-subir-sistema.md)
+Após qualquer alteração de código:
+```bash
+make deploy
+```
+
+## Comandos principais
+- `make help`
+- `make deploy`
+- `make down`
+- `make logs`
+- `make lint`
+- `make in SERVICE=backend`
+- `make doctor`
+- `make rebuild`
+
+Documentação principal:
+- [Guia Docker Unificado](docs/guia-docker-unificado.md)
 - [Roadmap de implementação](docs/implementation-roadmap.md)

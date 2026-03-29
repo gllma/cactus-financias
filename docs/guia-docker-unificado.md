@@ -8,7 +8,7 @@ Centralizar instalação, build, deploy e operação do projeto em **um único f
 - Docker + Docker Compose
 - Make
 
-## Fluxo oficial
+## Passo a passo (instalação + uso)
 ### 1) Clonar
 ```bash
 git clone <repo-url>
@@ -21,19 +21,23 @@ make install
 ```
 > O alvo `install` cria `.env`, builda imagens, sobe containers e valida health.
 
-### 3) Deploy após alterações de código
+### 3) Abrir o sistema
+- Frontend: http://localhost:3000
+- Perfil: http://localhost:3000/profile-preferences
+- Observabilidade: http://localhost:3000/observability-dashboard
+- Backend health: http://localhost:8000/health
+
+### 4) Uso básico
+1. No topo da aplicação, preencha Nome/E-mail e clique em **Salvar sessão**.
+2. Vá em **Perfil** e altere tema claro/escuro.
+3. Vá em **Observabilidade** e atualize a janela em minutos.
+4. Para validar bloqueio 403, use e-mail fora de `OBSERVABILITY_ALLOWLIST`.
+
+### 5) Após alterar código
 ```bash
 make deploy
 ```
-> O alvo `deploy` sempre atualiza containers com `--build --force-recreate --remove-orphans`.
-
-## Operação diária
-```bash
-make ps
-make logs
-make health
-make down
-```
+> O `deploy` sempre atualiza containers com `--build --force-recreate --remove-orphans`.
 
 ## Entrar nos containers
 ```bash
@@ -42,11 +46,34 @@ make in SERVICE=frontend
 make in SERVICE=db
 ```
 
-## Endpoints de avaliação
-- Frontend: http://localhost:3000
-- Perfil: http://localhost:3000/profile-preferences
-- Observabilidade: http://localhost:3000/observability-dashboard
-- Backend health: http://localhost:8000/health
+## Diagnóstico quando frontend não sobe
+### Passo 1: validar status
+```bash
+make ps
+```
+
+### Passo 2: ver logs
+```bash
+make doctor
+```
+
+### Passo 3: rebuild completo
+```bash
+make rebuild
+```
+
+### Passo 4: validar health backend
+```bash
+make health
+```
+
+## Comandos úteis
+```bash
+make help
+make logs
+make down
+make clean
+```
 
 ## Troubleshooting
 ### Docker não encontrado
@@ -54,9 +81,6 @@ Instale Docker Desktop/Engine e garanta `docker compose` disponível.
 
 ### Make não encontrado
 Instale `make` e rode novamente.
-
-### Falha no `make deploy`
-Execute `make logs` para identificar o serviço com erro e depois rode `make deploy` novamente.
 
 ### Falha na sincronização da branch
 `make sync` depende de branch `main` local/remota configurada.

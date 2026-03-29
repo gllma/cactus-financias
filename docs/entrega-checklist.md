@@ -44,7 +44,15 @@
 - [x] Adicionar pipeline CI inicial para validação de sintaxe PHP backend.
 - [x] Adicionar execução condicional de testes de feature no CI quando PHPUnit estiver disponível.
 - [x] Disponibilizar runbook e script para subir ambiente local.
+- [x] Disponibilizar documentação consolidada de instalação e subida do projeto.
+- [x] Unificar documentação Docker em guia único de instalação/deploy/operação.
 - [x] Disponibilizar fluxo navegável para avaliação funcional em navegador.
+- [x] Permitir simulação de usuários no frontend para validar allowlist e tema por sessão.
+- [x] Garantir estratégia Docker-first (build e subida sem instalação local de dependências da aplicação).
+- [x] Centralizar processos de build/deploy/operação no Makefile.
+- [x] Garantir `make install` para instalação completa e `make deploy` para atualização contínua.
+- [x] Disponibilizar entrada facilitada nos containers via Makefile (`make in`).
+- [x] Disponibilizar fluxo de diagnóstico para frontend (`make doctor` + `make rebuild`).
 
 ## Regra operacional de acompanhamento
 A partir desta entrega, todo reporte deve incluir obrigatoriamente:
