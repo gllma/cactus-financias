@@ -27,6 +27,7 @@ Responda obrigatoriamente com:
 7. Passos para execução
 8. Riscos, observações e pendências técnicas
 9. Sugestão de commits
+10. Checklist da entrega (desenvolvido x pendente)
 ```
 
 ---
