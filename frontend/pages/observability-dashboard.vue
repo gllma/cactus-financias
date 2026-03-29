@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { ref } from 'vue';
-import AppHeader from '../components/AppHeader.vue';
 import { useObservabilityDashboardHandler } from '../modules/observability/handlers/useObservabilityDashboardHandler';
 import { ObservabilityService } from '../modules/observability/services/observabilityService';
 import { useDemoSession } from '../src/useDemoSession';
@@ -55,71 +54,61 @@ async function refreshSummary() {
 </script>
 
 <template>
-  <AppHeader :user-name="session.userName" :current-theme="currentTheme" @toggleTheme="toggleTheme" />
-  <section>
-    <h1>Painel de Observabilidade</h1>
-    <div class="toolbar">
-      <label>
-        Janela (minutos)
-        <input v-model.number="periodMinutes" type="number" min="5" max="1440" />
-      </label>
-      <button type="button" class="btn btn-primary" @click="refreshSummary">Atualizar resumo</button>
+  <section class="space-y-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Painel de Observabilidade</h1>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-6">
+      <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Janela (minutos)</span>
+          <input
+            v-model.number="periodMinutes"
+            type="number"
+            min="5"
+            max="1440"
+            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500"
+          />
+        </label>
+        <button
+          type="button"
+          class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
+          @click="refreshSummary"
+        >
+          Atualizar resumo
+        </button>
+      </div>
     </div>
-    <p v-if="handler.loading" class="muted">Carregando métricas...</p>
-    <p v-else-if="handler.errorMessage" class="error">{{ handler.errorMessage }}</p>
-    <div v-else-if="handler.summary" class="metrics-grid">
-      <article class="metric-card"><span>Falhas em jobs</span><strong>{{ handler.summary.failedJobs }}</strong></article>
-      <article class="metric-card"><span>Jobs pendentes</span><strong>{{ handler.summary.pendingJobs }}</strong></article>
-      <article class="metric-card"><span>Exceções recentes</span><strong>{{ handler.summary.recentExceptions }}</strong></article>
-      <article class="metric-card"><span>Usuários totais</span><strong>{{ handler.summary.totalUsers }}</strong></article>
-      <article class="metric-card"><span>Usuários em tema escuro</span><strong>{{ handler.summary.darkThemeUsers }}</strong></article>
-      <article class="metric-card"><span>Uptime simulado</span><strong>{{ handler.summary.simulatedUptimePercent }}%</strong></article>
-      <p class="muted">Gerado em: {{ handler.summary.generatedAt }}</p>
+
+    <p v-if="handler.loading" class="text-sm font-medium text-gray-500 dark:text-gray-400">Carregando métricas...</p>
+    <p v-else-if="handler.errorMessage" class="text-sm font-medium text-red-600 dark:text-red-400">{{ handler.errorMessage }}</p>
+    <div v-else-if="handler.summary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Falhas em jobs</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.failedJobs }}</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Jobs pendentes</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.pendingJobs }}</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Exceções recentes</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.recentExceptions }}</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuários totais</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.totalUsers }}</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuários em tema escuro</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.darkThemeUsers }}</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Uptime simulado</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.simulatedUptimePercent }}%</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5 sm:col-span-2 lg:col-span-4">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Atualização</h3>
+        <p class="text-base font-semibold text-gray-900 dark:text-white mt-2">Gerado em: {{ handler.summary.generatedAt }}</p>
+      </article>
     </div>
   </section>
 </template>
-
-<style scoped>
-.toolbar {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: end;
-  margin-bottom: 12px;
-}
-
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
-}
-
-.metric-card {
-  padding: 14px;
-  border: 1px solid color-mix(in oklab, var(--primary-color), var(--border-color) 62%);
-  border-radius: 12px;
-  background: color-mix(in oklab, var(--card-color), white 5%);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-}
-
-.metric-card span {
-  color: var(--muted-color);
-  font-size: 0.9rem;
-}
-
-.metric-card strong {
-  font-size: 1.5rem;
-}
-
-.muted {
-  color: var(--muted-color);
-}
-
-.error {
-  color: #dc2626;
-  font-weight: 600;
-}
-</style>

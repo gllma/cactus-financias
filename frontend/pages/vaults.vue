@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import AppHeader from '../components/AppHeader.vue';
 import { useDemoSession } from '../src/useDemoSession';
 
 type Vault = {
@@ -31,7 +30,6 @@ type VaultInsights = {
 
 const session = useDemoSession();
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-const currentTheme = ref<'light' | 'dark'>('light');
 const vaults = ref<Vault[]>([]);
 const selectedVault = ref<Vault | null>(null);
 const transactions = ref<VaultTransaction[]>([]);
@@ -133,19 +131,7 @@ async function addTransaction(): Promise<void> {
   await loadRecentTransactions();
 }
 
-function toggleTheme() {
-  currentTheme.value = currentTheme.value === 'light' ? 'dark' : 'light';
-  localStorage.setItem('cactus_theme_preference', currentTheme.value);
-  document.documentElement.setAttribute('data-theme', currentTheme.value);
-}
-
 onMounted(async () => {
-  const cachedTheme = localStorage.getItem('cactus_theme_preference');
-  if (cachedTheme === 'light' || cachedTheme === 'dark') {
-    currentTheme.value = cachedTheme;
-  }
-  document.documentElement.setAttribute('data-theme', currentTheme.value);
-
   try {
     await loadVaults();
     await loadInsights();
@@ -157,34 +143,33 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppHeader :user-name="session.userName" :current-theme="currentTheme" @toggleTheme="toggleTheme" />
-  <section>
-    <h1>Cofres e Movimentações</h1>
-    <p class="muted">Organize objetivos e registre depósitos/saques.</p>
+  <section class="space-y-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Cofres e Movimentações</h1>
+    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Organize objetivos e registre depósitos/saques.</p>
 
-    <div v-if="insights" class="vault-grid">
-      <article class="kpi-card">
-        <span>Saldo total</span>
-        <strong>R$ {{ insights.total_balance.toFixed(2) }}</strong>
+    <div v-if="insights" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Saldo total</span>
+        <strong class="text-3xl font-bold text-gray-900 dark:text-white mt-2">R$ {{ insights.total_balance.toFixed(2) }}</strong>
       </article>
-      <article class="kpi-card">
-        <span>Meta total</span>
-        <strong>R$ {{ insights.total_target.toFixed(2) }}</strong>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Meta total</span>
+        <strong class="text-3xl font-bold text-gray-900 dark:text-white mt-2">R$ {{ insights.total_target.toFixed(2) }}</strong>
       </article>
-      <article class="kpi-card">
-        <span>Progresso das metas</span>
-        <strong>{{ insights.progress_percent.toFixed(1) }}%</strong>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Progresso das metas</span>
+        <strong class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ insights.progress_percent.toFixed(1) }}%</strong>
       </article>
-      <article class="kpi-card">
-        <span>Fluxo do mês</span>
-        <strong :style="{ color: insights.monthly_net >= 0 ? '#16a34a' : '#dc2626' }">R$ {{ insights.monthly_net.toFixed(2) }}</strong>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Fluxo do mês</span>
+        <strong class="text-3xl font-bold mt-2" :style="{ color: insights.monthly_net >= 0 ? '#16a34a' : '#dc2626' }">R$ {{ insights.monthly_net.toFixed(2) }}</strong>
       </article>
     </div>
 
-    <div class="toolbar">
-      <input v-model="newVaultName" placeholder="Nome do cofre" />
-      <input v-model.number="newVaultTarget" type="number" min="0" step="0.01" placeholder="Meta (opcional)" />
-      <button type="button" class="btn btn-primary" @click="createVault">Criar cofre</button>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <input v-model="newVaultName" placeholder="Nome do cofre" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+      <input v-model.number="newVaultTarget" type="number" min="0" step="0.01" placeholder="Meta (opcional)" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+      <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="createVault">Criar cofre</button>
     </div>
 
     <div class="vault-grid">
@@ -192,7 +177,7 @@ onMounted(async () => {
         v-for="vault in vaults"
         :key="vault.id"
         type="button"
-        class="btn btn-secondary vault-item"
+        class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 text-left"
         @click="loadTransactions(vault.id)"
       >
         {{ vault.name }} · Saldo: R$ {{ vault.balance.toFixed(2) }} · Meta: R$ {{ Number(vault.target_amount || 0).toFixed(2) }}
@@ -203,20 +188,20 @@ onMounted(async () => {
       <h2>{{ selectedVault.name }}</h2>
       <p>Saldo atual: R$ {{ selectedVault.balance.toFixed(2) }}</p>
       <div class="toolbar">
-        <select v-model="txType">
+        <select v-model="txType" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500">
           <option value="deposit">Depósito</option>
           <option value="withdraw">Saque</option>
         </select>
-        <select v-model="txCategory">
+        <select v-model="txCategory" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500">
           <option value="geral">Geral</option>
           <option value="reserva">Reserva</option>
           <option value="lazer">Lazer</option>
           <option value="moradia">Moradia</option>
           <option value="investimento">Investimento</option>
         </select>
-        <input v-model.number="txAmount" type="number" min="0.01" step="0.01" placeholder="Valor" />
-        <input v-model="txDescription" placeholder="Descrição" />
-        <button type="button" class="btn btn-primary" @click="addTransaction">Registrar movimentação</button>
+        <input v-model.number="txAmount" type="number" min="0.01" step="0.01" placeholder="Valor" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+        <input v-model="txDescription" placeholder="Descrição" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+        <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="addTransaction">Registrar movimentação</button>
       </div>
       <ul class="transaction-list">
         <li v-for="transaction in transactions" :key="transaction.id" class="transaction-item">
@@ -238,7 +223,7 @@ onMounted(async () => {
       </ul>
     </div>
 
-    <p v-if="message" class="muted">{{ message }}</p>
+    <p v-if="message" class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ message }}</p>
   </section>
 </template>
 

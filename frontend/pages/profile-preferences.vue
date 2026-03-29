@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import AvatarInitials from '../components/AvatarInitials.vue';
-import AppHeader from '../components/AppHeader.vue';
 import { ProfileService } from '../modules/profile/services/profileService';
 import { useProfileThemeHandler } from '../modules/profile/handlers/useProfileThemeHandler';
 import { useApplyThemeHandler } from '../modules/profile/handlers/useApplyThemeHandler';
@@ -62,71 +61,27 @@ async function setTheme(theme: 'light' | 'dark') {
   await handler.updateTheme({ theme });
 }
 
-async function toggleTheme() {
-  await setTheme(handler.currentTheme === 'light' ? 'dark' : 'light');
-}
 </script>
 
 <template>
-  <AppHeader :user-name="session.userName" :current-theme="handler.currentTheme" @toggleTheme="toggleTheme" />
-  <section class="profile-card">
-    <div class="profile-top">
-      <div>
-        <h1>Preferências de Perfil</h1>
-        <p class="muted">Personalize sua experiência visual no sistema.</p>
+  <section class="space-y-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-6">
+      <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Preferências de Perfil</h1>
+          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Personalize sua experiência visual no sistema.</p>
+        </div>
+        <AvatarInitials :name="session.userName" />
       </div>
-      <AvatarInitials :name="session.userName" />
+
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Tema atual: <span class="text-gray-900 dark:text-white">{{ handler.currentTheme }}</span></p>
+      <div class="flex flex-wrap gap-3">
+        <button type="button" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" @click="setTheme('light')">Tema Claro</button>
+        <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="setTheme('dark')">Tema Escuro</button>
+      </div>
     </div>
 
-    <p><strong>Tema atual:</strong> {{ handler.currentTheme }}</p>
-    <div class="theme-actions">
-      <button type="button" class="btn btn-secondary" @click="setTheme('light')">Tema Claro</button>
-      <button type="button" class="btn btn-primary" @click="setTheme('dark')">Tema Escuro</button>
-    </div>
-
-    <p v-if="handler.loading" class="muted">Salvando...</p>
-    <p v-if="handler.errorMessage" class="error">{{ handler.errorMessage }}</p>
+    <p v-if="handler.loading" class="text-sm font-medium text-gray-500 dark:text-gray-400">Salvando...</p>
+    <p v-if="handler.errorMessage" class="text-sm font-medium text-red-600 dark:text-red-400">{{ handler.errorMessage }}</p>
   </section>
 </template>
-
-<style scoped>
-.profile-card {
-  position: relative;
-}
-
-.profile-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(130deg, rgba(45, 212, 191, 0.45), rgba(59, 130, 246, 0.2));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-.profile-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.theme-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.muted {
-  color: var(--muted-color);
-}
-
-.error {
-  color: #dc2626;
-  font-weight: 600;
-}
-</style>

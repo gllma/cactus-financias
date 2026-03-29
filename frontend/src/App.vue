@@ -1,8 +1,29 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { useDemoSession } from './useDemoSession';
 
 const session = useDemoSession();
+const route = useRoute();
+const mobileMenuOpen = ref(false);
+const currentTheme = ref<'light' | 'dark'>('light');
+
+const routeTitle = computed(() => {
+  if (route.path.includes('spaces')) return 'Espaços';
+  if (route.path.includes('vaults')) return 'Cofres';
+  if (route.path.includes('observability')) return 'Observabilidade';
+  if (route.path.includes('profile')) return 'Perfil';
+  return 'Login';
+});
+
+const userInitials = computed(() =>
+  session.userName.value
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((chunk) => chunk.charAt(0).toUpperCase())
+    .join(''),
+);
 
 onMounted(() => {
   session.load();
@@ -10,205 +31,61 @@ onMounted(() => {
   const cachedTheme = localStorage.getItem('cactus_theme_preference');
   if (cachedTheme === 'light' || cachedTheme === 'dark') {
     document.documentElement.setAttribute('data-theme', cachedTheme);
+    currentTheme.value = cachedTheme;
   }
 });
 
 function logout(): void {
   session.logout();
 }
+
+function toggleTheme(): void {
+  currentTheme.value = currentTheme.value === 'light' ? 'dark' : 'light';
+  localStorage.setItem('cactus_theme_preference', currentTheme.value);
+  document.documentElement.setAttribute('data-theme', currentTheme.value);
+}
 </script>
 
 <template>
-  <main class="app-shell">
-    <section v-if="session.isAuthenticated" class="session-bar card">
-      <input v-model="session.userName" placeholder="Nome" />
-      <input v-model="session.userEmail" placeholder="E-mail" />
-      <button type="button" class="btn btn-primary" @click="session.save">Salvar sessão</button>
-      <button type="button" class="btn btn-secondary" @click="logout">Sair</button>
+  <main class="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
+    <aside
+      v-if="session.isAuthenticated"
+      :class="[
+        'fixed inset-y-0 left-0 z-30 w-64 transform bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700 transition-transform md:translate-x-0 md:static md:inset-auto',
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
+      ]"
+    >
+      <div class="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-700">
+        <span class="text-lg font-semibold text-gray-900 dark:text-white">Cactus Financias</span>
+      </div>
+      <nav class="p-4">
+        <router-link to="/spaces" class="flex items-center px-4 py-2 mt-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700" active-class="bg-blue-50 text-blue-700 dark:bg-gray-700 dark:text-blue-400">Espaços</router-link>
+        <router-link to="/profile-preferences" class="flex items-center px-4 py-2 mt-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700" active-class="bg-blue-50 text-blue-700 dark:bg-gray-700 dark:text-blue-400">Perfil</router-link>
+        <router-link to="/vaults" class="flex items-center px-4 py-2 mt-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700" active-class="bg-blue-50 text-blue-700 dark:bg-gray-700 dark:text-blue-400">Cofres</router-link>
+        <router-link to="/observability-dashboard" class="flex items-center px-4 py-2 mt-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700" active-class="bg-blue-50 text-blue-700 dark:bg-gray-700 dark:text-blue-400">Observabilidade</router-link>
+      </nav>
+    </aside>
+
+    <section class="flex-1 flex flex-col min-w-0">
+      <header v-if="session.isAuthenticated" class="h-16 flex justify-between items-center px-6 sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-gray-200 dark:bg-gray-800/90 dark:border-gray-700">
+        <div class="flex items-center gap-3">
+          <button type="button" class="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white" @click="mobileMenuOpen = !mobileMenuOpen">☰</button>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Dashboard / {{ routeTitle }}</p>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button type="button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white" @click="toggleTheme">
+            {{ currentTheme === 'light' ? '🌙' : '☀️' }}
+          </button>
+          <div class="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ session.userName }}</span>
+          <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">{{ userInitials }}</div>
+          <button type="button" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" @click="logout">Sair</button>
+        </div>
+      </header>
+
+      <div class="flex-1 overflow-y-auto p-6 md:p-8 bg-gray-50 dark:bg-gray-900">
+        <router-view />
+      </div>
     </section>
-    <nav v-if="session.isAuthenticated" class="main-nav">
-      <router-link to="/spaces">Espaços</router-link>
-      <router-link to="/profile-preferences">Perfil</router-link>
-      <router-link to="/vaults">Cofres</router-link>
-      <router-link to="/observability-dashboard">Observabilidade</router-link>
-    </nav>
-    <router-view class="page-content" />
   </main>
 </template>
-
-<style>
-:root {
-  color-scheme: light;
-  --bg-color: #042f2e;
-  --card-color: rgba(255, 255, 255, 0.92);
-  --text-color: #0f172a;
-  --muted-color: #5b6b84;
-  --border-color: rgba(99, 119, 152, 0.35);
-  --primary-color: #0f766e;
-  --primary-hover-color: #0b5f5a;
-  --shadow-color: rgba(3, 16, 37, 0.28);
-  --glass-blur: blur(12px);
-}
-
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --bg-color: #031b1e;
-  --card-color: rgba(9, 22, 42, 0.85);
-  --text-color: #e2e8f0;
-  --muted-color: #8fa7c3;
-  --border-color: rgba(98, 123, 164, 0.4);
-  --primary-color: #22c4b4;
-  --primary-hover-color: #18a79a;
-  --shadow-color: rgba(2, 6, 23, 0.55);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: var(--bg-color);
-  color: var(--text-color);
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  position: relative;
-  overflow-x: hidden;
-}
-
-body::before,
-body::after {
-  content: '';
-  position: fixed;
-  inset: auto;
-  pointer-events: none;
-  z-index: -1;
-}
-
-body::before {
-  width: 540px;
-  height: 540px;
-  border-radius: 999px;
-  background: radial-gradient(circle at center, rgba(45, 212, 191, 0.25), transparent 70%);
-  top: -180px;
-  left: -100px;
-}
-
-body::after {
-  width: 420px;
-  height: 420px;
-  border-radius: 999px;
-  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.2), transparent 70%);
-  bottom: -140px;
-  right: -70px;
-}
-
-.app-shell {
-  min-height: 100vh;
-  width: min(1100px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 16px 0 24px;
-}
-
-.session-bar {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 0;
-}
-
-section {
-  margin: 16px;
-  padding: 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 18px;
-  background: var(--card-color);
-  box-shadow: 0 24px 45px -30px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  backdrop-filter: var(--glass-blur);
-}
-
-input,
-button,
-select {
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 8px 10px;
-  background: var(--card-color);
-  color: var(--text-color);
-  width: 100%;
-}
-
-input:focus,
-button:focus,
-select:focus {
-  outline: 2px solid color-mix(in oklab, var(--primary-color), white 35%);
-  outline-offset: 1px;
-}
-
-a {
-  color: inherit;
-}
-
-.btn {
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.24s ease;
-  font-weight: 600;
-}
-
-.btn-primary {
-  background: var(--primary-color);
-  color: #fff;
-}
-
-.btn-primary:hover {
-  background: var(--primary-hover-color);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 18px -12px rgba(15, 118, 110, 0.8);
-}
-
-.btn-secondary {
-  border-color: var(--border-color);
-}
-
-.main-nav {
-  display: flex;
-  gap: 8px;
-  padding: 6px;
-  margin: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  background: linear-gradient(160deg, rgba(15, 118, 110, 0.9), rgba(6, 78, 59, 0.92));
-  box-shadow: 0 20px 30px -22px rgba(6, 78, 59, 0.9);
-}
-
-.main-nav a {
-  padding: 10px 14px;
-  border-radius: 10px;
-  text-decoration: none;
-  color: rgba(224, 242, 254, 0.92);
-  font-weight: 600;
-}
-
-.main-nav a.router-link-active {
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-}
-
-.page-content {
-  display: block;
-}
-
-.card {
-  margin: 16px;
-}
-
-@media (max-width: 820px) {
-  .session-bar {
-    grid-template-columns: 1fr;
-  }
-
-  .main-nav {
-    overflow-x: auto;
-  }
-}
-</style>
