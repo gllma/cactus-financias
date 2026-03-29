@@ -43,11 +43,21 @@ async function login(): Promise<void> {
 </script>
 
 <template>
-  <section class="max-w-3xl mx-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-6 space-y-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Entrar</h1>
-      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Acesse sua conta para gerenciar seus espaços e finanças compartilhadas.</p>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <section class="min-h-full grid lg:grid-cols-2 gap-6 items-stretch">
+    <div class="hidden lg:flex card p-8 flex-col justify-between bg-gradient-to-br from-blue-600 to-blue-800 text-white border-blue-600">
+      <div>
+        <p class="uppercase text-xs tracking-widest text-blue-100">Cactus Financias</p>
+        <h1 class="mt-4 text-3xl font-bold">Gestão financeira inteligente para seus espaços</h1>
+        <p class="mt-3 text-blue-100">Controle cofres, acompanhe movimentações e monitore a saúde operacional em um painel moderno.</p>
+      </div>
+      <p class="text-sm text-blue-100">Padrão SaaS com foco em clareza, produtividade e segurança.</p>
+    </div>
+
+    <div class="card p-6 md:p-8 self-center">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Entrar</h1>
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-6">Acesse sua conta para gerenciar seus espaços e finanças compartilhadas.</p>
+
+      <div class="grid grid-cols-1 gap-4">
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Nome</span>
           <input v-model="session.userName" placeholder="Nome" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
@@ -56,15 +66,19 @@ async function login(): Promise<void> {
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400">E-mail</span>
           <input v-model="session.userEmail" placeholder="E-mail" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
         </label>
-        <label class="flex flex-col gap-1 md:col-span-2">
+        <label class="flex flex-col gap-1">
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Senha</span>
           <input v-model="password" placeholder="Senha" type="password" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
         </label>
       </div>
-      <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="login" :disabled="loading">
-        {{ loading ? 'Entrando...' : 'Entrar' }}
-      </button>
-      <p v-if="error" class="text-sm font-medium text-red-600 dark:text-red-400">{{ error }}</p>
+
+      <div class="mt-6 flex items-center gap-3">
+        <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="login" :disabled="loading">
+          {{ loading ? 'Entrando...' : 'Entrar' }}
+        </button>
+      </div>
+
+      <p v-if="error" class="mt-4 text-sm font-medium text-red-600 dark:text-red-400">{{ error }}</p>
     </div>
   </section>
 </template>

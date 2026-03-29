@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import App from './App.vue';
+import './styles.css';
 
 import ProfilePreferencesPage from '../pages/profile-preferences.vue';
 import ObservabilityDashboardPage from '../pages/observability-dashboard.vue';

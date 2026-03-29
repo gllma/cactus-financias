@@ -12,65 +12,14 @@ defineEmits<{
 </script>
 
 <template>
-  <header class="app-header">
-    <h1 class="app-title">Cactus Financias</h1>
-    <div class="app-actions">
-      <span class="theme-label">Tema: {{ currentTheme }}</span>
-      <button type="button" @click="$emit('toggleTheme')" class="theme-button btn btn-secondary">
+  <header class="card p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <h1 class="text-lg font-semibold text-gray-900 dark:text-white">Cactus Financias</h1>
+    <div class="flex items-center gap-3">
+      <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Tema: {{ currentTheme }}</span>
+      <button type="button" @click="$emit('toggleTheme')" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
         Alternar tema
       </button>
       <AvatarInitials :name="userName" />
     </div>
   </header>
 </template>
-
-<style scoped>
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  margin: 16px;
-  background: linear-gradient(150deg, rgba(5, 150, 105, 0.92), rgba(6, 78, 59, 0.95));
-  color: #f8fafc;
-  box-shadow: 0 16px 28px -22px rgba(4, 120, 87, 0.9);
-}
-
-.app-title {
-  margin: 0;
-  font-size: 1.125rem;
-}
-
-.app-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.theme-label {
-  color: rgba(240, 253, 250, 0.82);
-}
-
-.theme-button {
-  cursor: pointer;
-  width: auto;
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-}
-
-@media (max-width: 760px) {
-  .app-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .app-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-}
-</style>
