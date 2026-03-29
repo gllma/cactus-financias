@@ -65,15 +65,47 @@ async function toggleTheme() {
 
 <template>
   <AppHeader :user-name="session.userName" :current-theme="handler.currentTheme" @toggleTheme="toggleTheme" />
-  <section>
-    <h1>Preferências de Perfil</h1>
-    <AvatarInitials :name="session.userName" />
+  <section class="profile-card">
+    <div class="profile-top">
+      <div>
+        <h1>Preferências de Perfil</h1>
+        <p class="muted">Personalize sua experiência visual no sistema.</p>
+      </div>
+      <AvatarInitials :name="session.userName" />
+    </div>
 
-    <p>Tema atual: {{ handler.currentTheme }}</p>
-    <button type="button" @click="setTheme('light')">Tema Claro</button>
-    <button type="button" @click="setTheme('dark')">Tema Escuro</button>
+    <p><strong>Tema atual:</strong> {{ handler.currentTheme }}</p>
+    <div class="theme-actions">
+      <button type="button" class="btn btn-secondary" @click="setTheme('light')">Tema Claro</button>
+      <button type="button" class="btn btn-primary" @click="setTheme('dark')">Tema Escuro</button>
+    </div>
 
-    <p v-if="handler.loading">Salvando...</p>
-    <p v-if="handler.errorMessage">{{ handler.errorMessage }}</p>
+    <p v-if="handler.loading" class="muted">Salvando...</p>
+    <p v-if="handler.errorMessage" class="error">{{ handler.errorMessage }}</p>
   </section>
 </template>
+
+<style scoped>
+.profile-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.theme-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.muted {
+  color: var(--muted-color);
+}
+
+.error {
+  color: #dc2626;
+  font-weight: 600;
+}
+</style>

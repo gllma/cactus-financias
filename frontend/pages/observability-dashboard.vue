@@ -56,21 +56,67 @@ async function refreshSummary() {
   <AppHeader :user-name="session.userName" :current-theme="currentTheme" @toggleTheme="toggleTheme" />
   <section>
     <h1>Painel de Observabilidade</h1>
-    <label>
-      Janela (minutos)
-      <input v-model.number="periodMinutes" type="number" min="5" max="1440" />
-    </label>
-    <button type="button" @click="refreshSummary">Atualizar resumo</button>
-    <p v-if="handler.loading">Carregando métricas...</p>
-    <p v-else-if="handler.errorMessage">{{ handler.errorMessage }}</p>
-    <div v-else-if="handler.summary">
-      <p>Falhas em jobs: {{ handler.summary.failedJobs }}</p>
-      <p>Jobs pendentes: {{ handler.summary.pendingJobs }}</p>
-      <p>Exceções recentes: {{ handler.summary.recentExceptions }}</p>
-      <p>Usuários totais: {{ handler.summary.totalUsers }}</p>
-      <p>Usuários em tema escuro: {{ handler.summary.darkThemeUsers }}</p>
-      <p>Uptime simulado: {{ handler.summary.simulatedUptimePercent }}%</p>
-      <p>Gerado em: {{ handler.summary.generatedAt }}</p>
+    <div class="toolbar">
+      <label>
+        Janela (minutos)
+        <input v-model.number="periodMinutes" type="number" min="5" max="1440" />
+      </label>
+      <button type="button" class="btn btn-primary" @click="refreshSummary">Atualizar resumo</button>
+    </div>
+    <p v-if="handler.loading" class="muted">Carregando métricas...</p>
+    <p v-else-if="handler.errorMessage" class="error">{{ handler.errorMessage }}</p>
+    <div v-else-if="handler.summary" class="metrics-grid">
+      <article class="metric-card"><span>Falhas em jobs</span><strong>{{ handler.summary.failedJobs }}</strong></article>
+      <article class="metric-card"><span>Jobs pendentes</span><strong>{{ handler.summary.pendingJobs }}</strong></article>
+      <article class="metric-card"><span>Exceções recentes</span><strong>{{ handler.summary.recentExceptions }}</strong></article>
+      <article class="metric-card"><span>Usuários totais</span><strong>{{ handler.summary.totalUsers }}</strong></article>
+      <article class="metric-card"><span>Usuários em tema escuro</span><strong>{{ handler.summary.darkThemeUsers }}</strong></article>
+      <article class="metric-card"><span>Uptime simulado</span><strong>{{ handler.summary.simulatedUptimePercent }}%</strong></article>
+      <p class="muted">Gerado em: {{ handler.summary.generatedAt }}</p>
     </div>
   </section>
 </template>
+
+<style scoped>
+.toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.metric-card {
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--card-color), black 2%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metric-card span {
+  color: var(--muted-color);
+  font-size: 0.9rem;
+}
+
+.metric-card strong {
+  font-size: 1.5rem;
+}
+
+.muted {
+  color: var(--muted-color);
+}
+
+.error {
+  color: #dc2626;
+  font-weight: 600;
+}
+</style>

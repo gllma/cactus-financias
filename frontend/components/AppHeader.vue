@@ -16,7 +16,7 @@ defineEmits<{
     <h1 class="app-title">Cactus Financias</h1>
     <div class="app-actions">
       <span class="theme-label">Tema: {{ currentTheme }}</span>
-      <button type="button" @click="$emit('toggleTheme')" class="theme-button">
+      <button type="button" @click="$emit('toggleTheme')" class="theme-button btn btn-secondary">
         Alternar tema
       </button>
       <AvatarInitials :name="userName" />
@@ -51,5 +51,19 @@ defineEmits<{
 
 .theme-button {
   cursor: pointer;
+  width: auto;
+}
+
+@media (max-width: 760px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .app-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 </style>
