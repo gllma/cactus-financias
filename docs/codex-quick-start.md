@@ -54,6 +54,7 @@ Responda obrigatoriamente com:
 - Não peça tudo de uma vez
 - Sempre valide a resposta antes de seguir
 - Use commits sugeridos pelo CODEX
+- Antes de abrir PR, sincronize a branch de trabalho com a `main` executando `scripts/sync-with-main.sh`
 
 ---
 

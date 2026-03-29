@@ -43,3 +43,4 @@ A partir desta entrega, todo reporte deve incluir obrigatoriamente:
 1. Itens desenvolvidos no ciclo;
 2. Itens pendentes;
 3. Bloqueios técnicos (se existirem).
+4. Confirmação de sincronização da branch com a `main` antes de abrir PR.
