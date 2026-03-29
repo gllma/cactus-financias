@@ -4,9 +4,8 @@ SHELL := /bin/bash
 COMPOSE := docker compose
 BACKEND_ENV := backend/.env
 FRONTEND_ENV := frontend/.env
-SERVICE ?= backend
 
-.PHONY: help setup install build deploy up down restart logs ps health lint sync ci-test clean in in-backend in-frontend in-db
+.PHONY: help setup build up down restart logs ps health lint sync deploy install ci-test clean
 
 help: ## Exibe comandos disponíveis
 	@echo "Comandos disponíveis:"
@@ -19,14 +18,6 @@ setup: ## Cria .env de backend/frontend se necessário
 
 build: setup ## Builda todas as imagens Docker
 	$(COMPOSE) build
-
-install: setup build up health ## Instala completamente e valida o projeto
-	@echo "Instalação completa finalizada"
-
-deploy: setup ## Atualiza o ambiente após alterações de código
-	$(COMPOSE) up -d --build --force-recreate --remove-orphans
-	@$(MAKE) health
-	@echo "Deploy atualizado concluído"
 
 up: setup ## Sobe todo o ambiente
 	$(COMPOSE) up -d --build
@@ -51,6 +42,8 @@ lint: ## Roda lint de sintaxe PHP do backend
 sync: ## Sincroniza branch com main (quando disponível)
 	./scripts/sync-with-main.sh
 
+install: build ## Alias de instalação via Docker
+
 ci-test: ## Executa testes de feature quando PHPUnit existir
 	@if [ -x backend/vendor/bin/phpunit ]; then \
 		cd backend && ./vendor/bin/phpunit --testsuite=Feature; \
@@ -58,17 +51,8 @@ ci-test: ## Executa testes de feature quando PHPUnit existir
 		echo "PHPUnit não encontrado em backend/vendor/bin/phpunit; etapa ignorada."; \
 	fi
 
+deploy: build up health ## Pipeline local de build+subida+healthcheck
+	@echo "Deploy local concluído"
+
 clean: ## Remove containers e volumes
 	$(COMPOSE) down -v
-
-in: ## Entra no container informado em SERVICE (default: backend)
-	$(COMPOSE) exec $(SERVICE) sh
-
-in-backend: ## Entra no container backend
-	$(COMPOSE) exec backend sh
-
-in-frontend: ## Entra no container frontend
-	$(COMPOSE) exec frontend sh
-
-in-db: ## Entra no container db
-	$(COMPOSE) exec db sh
