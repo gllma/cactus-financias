@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cactus Financias</title>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #0f766e;
+      --border: #e2e8f0;
+    }
+    html[data-theme='dark'] {
+      --bg: #020617;
+      --surface: #0f172a;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --primary: #14b8a6;
+      --border: #1e293b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .container { max-width: 980px; margin: 0 auto; padding: 16px; }
+    .topbar {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+    }
+    .topbar input, .topbar select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); }
+    .btn { padding: 8px 12px; border: 0; border-radius: 8px; background: var(--primary); color: #fff; cursor: pointer; }
+    .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .header {
+      margin-top: 12px; display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+    }
+    .avatar {
+      width: 42px; height: 42px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: #fff; font-weight: 700;
+    }
+    nav { margin: 12px 0; }
+    nav a {
+      text-decoration: none; margin-right: 12px; color: var(--muted); font-weight: 600;
+    }
+    nav a.active { color: var(--primary); }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; margin-top: 12px; }
+    .metric { border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+    .metric .label { color: var(--muted); font-size: 13px; }
+    .metric .value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+    #msg { margin-top: 10px; color: var(--muted); }
+    @media (max-width: 760px) {
+      .container { padding: 12px; }
+      .header { align-items: flex-start; gap: 8px; }
+      nav { display: flex; overflow-x: auto; white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <input id="name" placeholder="Nome" value="Maria Silva"/>
+      <input id="email" placeholder="E-mail" value="admin@cactus.com"/>
+      <button id="saveSession" class="btn">Salvar sessão</button>
+      <button id="toggleTheme" class="btn secondary">Alternar tema</button>
+    </header>
+
+    <section class="header">
+      <div>
+        <div style="font-weight:700">Cactus Financias</div>
+        <div id="welcome" style="color:var(--muted);font-size:14px"></div>
+      </div>
+      <div class="avatar" id="avatar"></div>
+    </section>
+
+    <nav>
+      <a href="#/profile" id="link-profile">Perfil</a>
+      <a href="#/vaults" id="link-vaults">Cofres</a>
+      <a href="#/observability" id="link-observability">Observabilidade</a>
+    </nav>
+
+    <main id="app"></main>
+  </div>
+
+<script>
+const API=window.CACTUS_API_BASE_URL || `${location.protocol}//${location.hostname}:8000`;
+const state={name:'Maria Silva',email:'admin@cactus.com',theme:'light'};
+
+function initials(name){return name.trim().split(/\s+/).slice(0,2).map(n=>n[0]?.toUpperCase()||'').join('');}
+function applyTheme(){document.documentElement.setAttribute('data-theme', state.theme);}
+function hydrateHeader(){
+  document.getElementById('welcome').textContent=`Usuário: ${state.name} (${state.email})`;
+  document.getElementById('avatar').textContent=initials(state.name);
+  document.getElementById('name').value=state.name;
+  document.getElementById('email').value=state.email;
+}
+
+function loadSession(){
+  const raw=localStorage.getItem('cactus_demo_session');
+  if(!raw) return;
+  try{Object.assign(state,JSON.parse(raw));}catch{}
+}
+
+function saveSession(){
+  state.name=document.getElementById('name').value;
+  state.email=document.getElementById('email').value;
+  localStorage.setItem('cactus_demo_session',JSON.stringify(state));
+  hydrateHeader();
+  render();
+}
+
+async function api(path,opts={}){
+  const headers=Object.assign({'X-User-Email':state.email,'X-User-Name':state.name,'Content-Type':'application/json'},opts.headers||{});
+  const r=await fetch(API+path,{...opts,headers});
+  const data=await r.json();
+  if(!r.ok) throw new Error(data.message||'Erro');
+  return data;
+}
+
+async function renderProfile(){
+  const app=document.getElementById('app');
+  try{const res=await api('/api/profile/theme');state.theme=res.data.theme;applyTheme();}catch{}
+
+  app.innerHTML=`
+    <section class='card'>
+      <h2>Preferências de Perfil</h2>
+      <p style='color:var(--muted)'>Persistência de tema por usuário com backend.</p>
+      <div style='display:flex;gap:8px'>
+        <button class='btn' id='light'>Tema Claro</button>
+        <button class='btn secondary' id='dark'>Tema Escuro</button>
+      </div>
+      <div id='msg'>Tema atual: <b>${state.theme}</b></div>
+    </section>`;
+
+  app.querySelector('#light').onclick=()=>setTheme('light');
+  app.querySelector('#dark').onclick=()=>setTheme('dark');
+}
+
+async function setTheme(theme){
+  try{
+    const res=await api('/api/profile/theme',{method:'PATCH',body:JSON.stringify({theme})});
+    state.theme=res.data.theme;
+    localStorage.setItem('cactus_demo_session',JSON.stringify(state));
+    applyTheme();
+    renderProfile();
+  }catch(e){
+    document.getElementById('msg').textContent=e.message;
+  }
+}
+
+async function renderObs(){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <section class='card'>
+      <h2>Painel de Observabilidade</h2>
+      <div style='display:flex;gap:8px;align-items:center'>
+        <label>Janela(min): <input id='period' type='number' min='5' max='1440' value='60' style='width:90px'/></label>
+        <button id='load' class='btn'>Atualizar resumo</button>
+      </div>
+      <div class='grid' id='metrics'></div>
+      <div id='msg' style='margin-top:8px'></div>
+    </section>`;
+
+  app.querySelector('#load').onclick=async()=>{
+    const p=app.querySelector('#period').value;
+    try{
+      const res=await api('/api/infra/observability/summary?period_minutes='+p);
+      const metrics=app.querySelector('#metrics');
+      metrics.innerHTML=`
+        <div class='metric'><div class='label'>Falhas em jobs</div><div class='value'>${res.data.failed_jobs}</div></div>
+        <div class='metric'><div class='label'>Jobs pendentes</div><div class='value'>${res.data.pending_jobs}</div></div>
+        <div class='metric'><div class='label'>Exceções recentes</div><div class='value'>${res.data.recent_exceptions}</div></div>
+        <div class='metric'><div class='label'>Usuários totais</div><div class='value'>${res.data.total_users}</div></div>
+        <div class='metric'><div class='label'>Usuários em tema escuro</div><div class='value'>${res.data.dark_theme_users}</div></div>
+        <div class='metric'><div class='label'>Uptime simulado</div><div class='value'>${res.data.simulated_uptime_percent}%</div></div>`;
+      app.querySelector('#msg').textContent=`Gerado em: ${res.meta.generated_at}`;
+    }catch(e){
+      app.querySelector('#metrics').innerHTML='';
+      app.querySelector('#msg').textContent=e.message;
+    }
+  };
+
+  app.querySelector('#load').click();
+}
+
+async function renderVaults(){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <section class='card'>
+      <h2>Cofres e Movimentações</h2>
+      <p style='color:var(--muted)'>Crie cofres para metas e registre entradas/saídas.</p>
+
+      <div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px'>
+        <input id='vault-name' placeholder='Nome do cofre (ex.: Viagem)' />
+        <input id='vault-target' type='number' min='0' step='0.01' placeholder='Meta (opcional)' />
+        <button id='create-vault' class='btn'>Criar cofre</button>
+      </div>
+
+      <div id='vault-list' style='display:grid;gap:8px;margin-bottom:12px'></div>
+      <div id='vault-ops'></div>
+      <div id='msg'></div>
+    </section>`;
+
+  const vaultList=app.querySelector('#vault-list');
+  const vaultOps=app.querySelector('#vault-ops');
+  const msg=app.querySelector('#msg');
+
+  async function loadVaults(selectedId=null){
+    try{
+      const res=await api('/api/vaults');
+      const vaults=res.data||[];
+      if(!vaults.length){
+        vaultList.innerHTML="<div style='color:var(--muted)'>Nenhum cofre criado ainda.</div>";
+        vaultOps.innerHTML='';
+        return;
+      }
+
+      vaultList.innerHTML=vaults.map((v)=>`
+        <button class='btn secondary vault-item' data-id='${v.id}' style='text-align:left'>
+          <b>${v.name}</b> · Saldo: R$ ${Number(v.balance).toFixed(2)} · Meta: R$ ${Number(v.target_amount||0).toFixed(2)}
+        </button>`).join('');
+
+      const activeId=selectedId||vaults[0].id;
+      vaultList.querySelectorAll('.vault-item').forEach((btn)=>{
+        btn.onclick=()=>loadTransactions(btn.dataset.id);
+      });
+      await loadTransactions(activeId);
+    }catch(e){
+      msg.textContent=e.message;
+    }
+  }
+
+  async function loadTransactions(vaultId){
+    try{
+      const res=await api(`/api/vaults/${vaultId}/transactions`);
+      const vault=res.data.vault;
+      const txs=res.data.transactions||[];
+      vaultOps.innerHTML=`
+        <div style='padding:12px;border:1px solid var(--border);border-radius:10px'>
+          <h3 style='margin-top:0'>${vault.name}</h3>
+          <p style='color:var(--muted)'>Saldo atual: <b>R$ ${Number(vault.balance).toFixed(2)}</b></p>
+          <div style='display:flex;gap:8px;flex-wrap:wrap'>
+            <select id='tx-type'>
+              <option value='deposit'>Depósito</option>
+              <option value='withdraw'>Saque</option>
+            </select>
+            <input id='tx-amount' type='number' min='0.01' step='0.01' placeholder='Valor' />
+            <input id='tx-description' placeholder='Descrição (opcional)' />
+            <button id='add-tx' class='btn'>Registrar</button>
+          </div>
+          <div style='margin-top:10px'>
+            ${txs.length ? txs.map((t)=>`<div style='padding:8px 0;border-bottom:1px solid var(--border)'>${t.type==='deposit'?'⬆️ Depósito':'⬇️ Saque'} · R$ ${Number(t.amount).toFixed(2)} ${t.description?`· ${t.description}`:''}</div>`).join('') : "<div style='color:var(--muted)'>Sem movimentações.</div>"}
+          </div>
+        </div>`;
+
+      vaultOps.querySelector('#add-tx').onclick=async()=>{
+        const type=vaultOps.querySelector('#tx-type').value;
+        const amount=Number(vaultOps.querySelector('#tx-amount').value);
+        const description=vaultOps.querySelector('#tx-description').value;
+        try{
+          await api(`/api/vaults/${vaultId}/transactions`,{
+            method:'POST',
+            body:JSON.stringify({type,amount,description})
+          });
+          msg.textContent='Movimentação registrada com sucesso.';
+          await loadVaults(vaultId);
+        }catch(e){
+          msg.textContent=e.message;
+        }
+      };
+    }catch(e){
+      msg.textContent=e.message;
+    }
+  }
+
+  app.querySelector('#create-vault').onclick=async()=>{
+    const name=app.querySelector('#vault-name').value;
+    const targetAmount=Number(app.querySelector('#vault-target').value||0);
+    try{
+      const res=await api('/api/vaults',{method:'POST',body:JSON.stringify({name,target_amount:targetAmount})});
+      app.querySelector('#vault-name').value='';
+      app.querySelector('#vault-target').value='';
+      msg.textContent='Cofre criado com sucesso.';
+      await loadVaults(res.data.id);
+    }catch(e){
+      msg.textContent=e.message;
+    }
+  };
+
+  await loadVaults();
+}
+
+function activateNav(hash){
+  document.getElementById('link-profile').classList.toggle('active', hash === '#/profile');
+  document.getElementById('link-vaults').classList.toggle('active', hash === '#/vaults');
+  document.getElementById('link-observability').classList.toggle('active', hash === '#/observability');
+}
+
+function route(){
+  const h=location.hash||'#/profile';
+  activateNav(h);
+  if(h==='#/observability') renderObs();
+  else if(h==='#/vaults') renderVaults();
+  else renderProfile();
+}
+
+document.getElementById('saveSession').onclick=saveSession;
+document.getElementById('toggleTheme').onclick=()=>setTheme(state.theme==='light'?'dark':'light');
+window.addEventListener('hashchange',route);
+
+loadSession();
+hydrateHeader();
+applyTheme();
+route();
+</script>
+</body>
+</html>
