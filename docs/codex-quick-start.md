@@ -27,6 +27,7 @@ Responda obrigatoriamente com:
 7. Passos para execução
 8. Riscos, observações e pendências técnicas
 9. Sugestão de commits
+10. Checklist da entrega (desenvolvido x pendente)
 ```
 
 ---
@@ -53,6 +54,7 @@ Responda obrigatoriamente com:
 - Não peça tudo de uma vez
 - Sempre valide a resposta antes de seguir
 - Use commits sugeridos pelo CODEX
+- Antes de abrir PR, sincronize a branch de trabalho com a `main` executando `scripts/sync-with-main.sh`
 
 ---
 
