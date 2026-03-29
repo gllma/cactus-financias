@@ -1,0 +1,114 @@
+<script setup lang="ts">
+import { onMounted } from 'vue';
+import { ref } from 'vue';
+import { useObservabilityDashboardHandler } from '../modules/observability/handlers/useObservabilityDashboardHandler';
+import { ObservabilityService } from '../modules/observability/services/observabilityService';
+import { useDemoSession } from '../src/useDemoSession';
+
+const session = useDemoSession();
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+const httpClient = {
+  get: async <T>(url: string): Promise<T> => {
+    const response = await fetch(`${apiBaseUrl}${url}`, {
+      credentials: 'include',
+      headers: {
+        'X-User-Email': session.userEmail.value,
+        'X-User-Name': session.userName.value,
+        Authorization: `Bearer ${session.authToken.value}`,
+        ...(session.activeSpaceId.value ? { 'X-Space-Id': String(session.activeSpaceId.value) } : {}),
+      },
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload?.message ?? 'Falha ao carregar observabilidade.');
+    }
+
+    return payload;
+  },
+};
+
+const handler = useObservabilityDashboardHandler(new ObservabilityService(httpClient));
+const themeStorageKey = 'cactus_theme_preference';
+const currentTheme = ref<'light' | 'dark'>('light');
+const periodMinutes = ref(60);
+
+onMounted(async () => {
+  const cachedTheme = localStorage.getItem(themeStorageKey);
+  if (cachedTheme === 'light' || cachedTheme === 'dark') {
+    currentTheme.value = cachedTheme;
+    document.documentElement.setAttribute('data-theme', cachedTheme);
+  }
+
+  await handler.loadSummary(periodMinutes.value);
+});
+
+function toggleTheme() {
+  currentTheme.value = currentTheme.value === 'light' ? 'dark' : 'light';
+  localStorage.setItem(themeStorageKey, currentTheme.value);
+  document.documentElement.setAttribute('data-theme', currentTheme.value);
+}
+async function refreshSummary() {
+  await handler.loadSummary(periodMinutes.value);
+}
+</script>
+
+<template>
+  <section class="space-y-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Painel de Observabilidade</h1>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-6">
+      <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Janela (minutos)</span>
+          <input
+            v-model.number="periodMinutes"
+            type="number"
+            min="5"
+            max="1440"
+            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500"
+          />
+        </label>
+        <button
+          type="button"
+          class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
+          @click="refreshSummary"
+        >
+          Atualizar resumo
+        </button>
+      </div>
+    </div>
+
+    <p v-if="handler.loading" class="text-sm font-medium text-gray-500 dark:text-gray-400">Carregando métricas...</p>
+    <p v-else-if="handler.errorMessage" class="text-sm font-medium text-red-600 dark:text-red-400">{{ handler.errorMessage }}</p>
+    <div v-else-if="handler.summary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Falhas em jobs</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.failedJobs }}</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Jobs pendentes</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.pendingJobs }}</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Exceções recentes</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.recentExceptions }}</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuários totais</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.totalUsers }}</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuários em tema escuro</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.darkThemeUsers }}</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Uptime simulado</h3>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ handler.summary.simulatedUptimePercent }}%</p>
+      </article>
+      <article class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-5 sm:col-span-2 lg:col-span-4">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Atualização</h3>
+        <p class="text-base font-semibold text-gray-900 dark:text-white mt-2">Gerado em: {{ handler.summary.generatedAt }}</p>
+      </article>
+    </div>
+  </section>
+</template>

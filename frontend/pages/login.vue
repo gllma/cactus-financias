@@ -1,0 +1,70 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useDemoSession } from '../src/useDemoSession';
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const session = useDemoSession();
+const router = useRouter();
+const loading = ref(false);
+const error = ref('');
+const password = ref('123456');
+
+async function login(): Promise<void> {
+  loading.value = true;
+  error.value = '';
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: session.userEmail.value,
+        name: session.userName.value,
+        password: password.value,
+      }),
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload?.message ?? 'Não foi possível entrar.');
+    }
+
+    session.setAuth(payload.data.token);
+    if (payload.data.active_space_id) {
+      session.setActiveSpace(payload.data.active_space_id);
+    }
+    await router.push('/vaults');
+  } catch (err) {
+    error.value = (err as Error).message;
+  } finally {
+    loading.value = false;
+  }
+}
+</script>
+
+<template>
+  <section class="max-w-3xl mx-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-6 space-y-4">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Entrar</h1>
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Acesse sua conta para gerenciar seus espaços e finanças compartilhadas.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Nome</span>
+          <input v-model="session.userName" placeholder="Nome" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">E-mail</span>
+          <input v-model="session.userEmail" placeholder="E-mail" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+        </label>
+        <label class="flex flex-col gap-1 md:col-span-2">
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Senha</span>
+          <input v-model="password" placeholder="Senha" type="password" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+        </label>
+      </div>
+      <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="login" :disabled="loading">
+        {{ loading ? 'Entrando...' : 'Entrar' }}
+      </button>
+      <p v-if="error" class="text-sm font-medium text-red-600 dark:text-red-400">{{ error }}</p>
+    </div>
+  </section>
+</template>
