@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cactus Financias</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:0}header,nav,main{padding:12px}nav a{margin-right:12px}
+    .card{border:1px solid #ddd;padding:12px;border-radius:8px;margin-top:12px}
+  </style>
+</head>
+<body>
+<header>
+  <input id="name" placeholder="Nome" value="Maria Silva"/>
+  <input id="email" placeholder="E-mail" value="admin@cactus.com"/>
+  <button id="saveSession">Salvar sessão</button>
+</header>
+<nav>
+  <a href="#/profile">Perfil</a>
+  <a href="#/observability">Observabilidade</a>
+</nav>
+<main id="app"></main>
+<script>
+const API='http://localhost:8000';
+const state={name:'Maria Silva',email:'admin@cactus.com',theme:'light'};
+function loadSession(){const raw=localStorage.getItem('cactus_demo_session');if(!raw)return;try{Object.assign(state,JSON.parse(raw));}catch{}}
+function saveSession(){state.name=document.getElementById('name').value;state.email=document.getElementById('email').value;localStorage.setItem('cactus_demo_session',JSON.stringify(state));render();}
+async function api(path,opts={}){const headers=Object.assign({'X-User-Email':state.email,'X-User-Name':state.name,'Content-Type':'application/json'},opts.headers||{});const r=await fetch(API+path,{...opts,headers});const data=await r.json();if(!r.ok)throw new Error(data.message||'Erro');return data;}
+async function renderProfile(){const app=document.getElementById('app');try{const res=await api('/api/profile/theme');state.theme=res.data.theme;}catch{};
+app.innerHTML=`<div class='card'><h2>Preferências de Perfil</h2><p>Usuário: ${state.name}</p><p>Tema atual: <b>${state.theme}</b></p><button id='light'>Tema Claro</button><button id='dark'>Tema Escuro</button><p id='msg'></p></div>`;
+app.querySelector('#light').onclick=()=>setTheme('light');app.querySelector('#dark').onclick=()=>setTheme('dark');}
+async function setTheme(theme){try{const res=await api('/api/profile/theme',{method:'PATCH',body:JSON.stringify({theme})});state.theme=res.data.theme;document.getElementById('msg').textContent='Tema salvo';renderProfile();}catch(e){document.getElementById('msg').textContent=e.message;}}
+async function renderObs(){const app=document.getElementById('app');app.innerHTML=`<div class='card'><h2>Painel de Observabilidade</h2><label>Janela(min): <input id='period' type='number' min='5' max='1440' value='60'/></label><button id='load'>Atualizar</button><pre id='data'></pre></div>`;
+app.querySelector('#load').onclick=async()=>{const p=app.querySelector('#period').value;try{const res=await api('/api/infra/observability/summary?period_minutes='+p);app.querySelector('#data').textContent=JSON.stringify(res,null,2);}catch(e){app.querySelector('#data').textContent=e.message;}};
+app.querySelector('#load').click();}
+function route(){const h=location.hash||'#/profile';if(h==='#/observability')renderObs();else renderProfile();}
+document.getElementById('saveSession').onclick=saveSession;window.addEventListener('hashchange',route);loadSession();document.getElementById('name').value=state.name;document.getElementById('email').value=state.email;route();
+</script>
+</body></html>
