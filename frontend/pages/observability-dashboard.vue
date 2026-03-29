@@ -17,20 +17,34 @@ const httpClient = {
         'X-User-Name': session.userName.value,
       },
     });
-    return response.json();
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload?.message ?? 'Falha ao carregar observabilidade.');
+    }
+
+    return payload;
   },
 };
 
 const handler = useObservabilityDashboardHandler(new ObservabilityService(httpClient));
+const themeStorageKey = 'cactus_theme_preference';
 const currentTheme = ref<'light' | 'dark'>('light');
 const periodMinutes = ref(60);
 
 onMounted(async () => {
+  const cachedTheme = localStorage.getItem(themeStorageKey);
+  if (cachedTheme === 'light' || cachedTheme === 'dark') {
+    currentTheme.value = cachedTheme;
+    document.documentElement.setAttribute('data-theme', cachedTheme);
+  }
+
   await handler.loadSummary(periodMinutes.value);
 });
 
 function toggleTheme() {
   currentTheme.value = currentTheme.value === 'light' ? 'dark' : 'light';
+  localStorage.setItem(themeStorageKey, currentTheme.value);
+  document.documentElement.setAttribute('data-theme', currentTheme.value);
 }
 async function refreshSummary() {
   await handler.loadSummary(periodMinutes.value);

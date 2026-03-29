@@ -18,7 +18,12 @@ const httpClient = {
         'X-User-Name': session.userName.value,
       },
     });
-    return response.json();
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload?.message ?? 'Falha ao buscar preferência de tema.');
+    }
+
+    return payload;
   },
   patch: async <T>(url: string, payload: unknown): Promise<T> => {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${url}`, {
@@ -32,7 +37,12 @@ const httpClient = {
       body: JSON.stringify(payload),
     });
 
-    return response.json();
+    const body = await response.json();
+    if (!response.ok) {
+      throw new Error(body?.message ?? 'Falha ao salvar preferência de tema.');
+    }
+
+    return body;
   },
 };
 

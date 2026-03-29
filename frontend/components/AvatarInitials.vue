@@ -16,10 +16,22 @@ const initials = computed(() =>
 </script>
 
 <template>
-  <div
-    class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-sm font-semibold text-white"
-    :aria-label="`Avatar ${initials}`"
-  >
+  <div class="avatar" :aria-label="`Avatar ${initials}`">
     {{ initials }}
   </div>
 </template>
+
+<style scoped>
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #047857;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+</style>
