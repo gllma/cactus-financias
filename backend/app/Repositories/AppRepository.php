@@ -12,6 +12,30 @@ class AppRepository
     {
     }
 
+
+    /**
+     * @template T
+     * @param callable():T $callback
+     * @return T
+     */
+    public function transaction(callable $callback): mixed
+    {
+        $this->database->beginTransaction();
+
+        try {
+            $result = $callback();
+            $this->database->commit();
+
+            return $result;
+        } catch (\Throwable $exception) {
+            if ($this->database->inTransaction()) {
+                $this->database->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
     public function bootstrapSchema(): void
     {
         $this->database->exec("CREATE TABLE IF NOT EXISTS users (

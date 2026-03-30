@@ -4,40 +4,21 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Actions\CreateSpaceAction;
+use App\Actions\EnsurePersonalSpaceAction;
+use App\Actions\LoginUserAction;
 use App\Repositories\AppRepository;
 use RuntimeException;
 
 class AppService
 {
-    public function __construct(private readonly AppRepository $repository)
-    {
+    public function __construct(
+        private readonly AppRepository $repository,
+        private readonly EnsurePersonalSpaceAction $ensurePersonalSpaceAction,
+        private readonly LoginUserAction $loginUserAction,
+        private readonly CreateSpaceAction $createSpaceAction,
+    ) {
         $this->repository->bootstrapSchema();
-    }
-
-    public function bootstrapUser(string $headerEmail, string $headerName): array
-    {
-        $email = $headerEmail !== '' ? $headerEmail : 'admin@cactus.com';
-        $name = $headerName !== '' ? $headerName : 'Maria Silva';
-
-        $this->repository->upsertUser($email, $name);
-        $personalSpaceId = $this->ensurePersonalSpace($email);
-        $this->repository->backfillVaultSpace($email, $personalSpaceId);
-
-        return ['email' => $email, 'name' => $name, 'personal_space_id' => $personalSpaceId];
-    }
-
-    public function ensurePersonalSpace(string $email): int
-    {
-        $spaceId = $this->repository->findSpaceByOwner($email);
-        if ($spaceId !== null) {
-            $this->repository->upsertMember($spaceId, $email, 'owner', 'active');
-            return $spaceId;
-        }
-
-        $createdId = $this->repository->createSpace('Espaço de ' . $email, $email);
-        $this->repository->upsertMember($createdId, $email, 'owner', 'active');
-
-        return $createdId;
     }
 
     public function login(string $email, string $name, string $password): array
@@ -46,17 +27,7 @@ class AppService
             throw new RuntimeException('E-mail e senha são obrigatórios.');
         }
 
-        $this->repository->upsertUser($email, $name, 'light');
-        $this->repository->updateUserName($email, $name);
-        $spaceId = $this->ensurePersonalSpace($email);
-        $token = $this->repository->createToken($email, $spaceId);
-
-        return [
-            'token' => $token,
-            'email' => $email,
-            'name' => $name,
-            'active_space_id' => $spaceId,
-        ];
+        return $this->loginUserAction->execute($email, $name);
     }
 
     public function contextFromToken(string $token): ?array
@@ -76,7 +47,7 @@ class AppService
         $name = $this->repository->findUserNameByEmail($email) ?? ($headerName !== '' ? $headerName : 'Maria Silva');
 
         $this->repository->upsertUser($email, $name);
-        $personalSpaceId = $this->ensurePersonalSpace($email);
+        $personalSpaceId = $this->ensurePersonalSpaceAction->execute($email);
         $this->repository->backfillVaultSpace($email, $personalSpaceId);
 
         $activeSpaceId = $headerSpaceId ?? ($context['active_space_id'] ?? $personalSpaceId);
@@ -135,20 +106,7 @@ class AppService
             throw new RuntimeException('Nome do espaço é obrigatório.');
         }
 
-        $spaceId = $this->repository->createSpace($name, $email);
-        $this->repository->upsertMember($spaceId, $email, 'owner', 'active');
-
-        if ($token !== '') {
-            $this->repository->updateTokenSpace($token, $spaceId);
-        }
-
-        return [
-            'id' => $spaceId,
-            'name' => $name,
-            'owner_email' => $email,
-            'role' => 'owner',
-            'membership_status' => 'active',
-        ];
+        return $this->createSpaceAction->execute($email, $name, $token);
     }
 
     public function inviteToSpace(int $spaceId, string $ownerEmail, string $inviteEmail, string $role): void

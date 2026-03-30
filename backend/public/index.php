@@ -8,6 +8,9 @@ use App\Repositories\AppRepository;
 use App\Services\AppService;
 require_once __DIR__ . '/../app/Infrastructure/DatabaseConnection.php';
 require_once __DIR__ . '/../app/Repositories/AppRepository.php';
+require_once __DIR__ . '/../app/Actions/EnsurePersonalSpaceAction.php';
+require_once __DIR__ . '/../app/Actions/LoginUserAction.php';
+require_once __DIR__ . '/../app/Actions/CreateSpaceAction.php';
 require_once __DIR__ . '/../app/Services/AppService.php';
 require_once __DIR__ . '/../app/Http/Controllers/AppApiController.php';
 
@@ -68,7 +71,10 @@ function statusFromMessage(string $message): int
 
 try {
     $repository = new AppRepository(DatabaseConnection::make());
-    $service = new AppService($repository);
+    $ensurePersonalSpaceAction = new App\Actions\EnsurePersonalSpaceAction($repository);
+    $loginUserAction = new App\Actions\LoginUserAction($repository, $ensurePersonalSpaceAction);
+    $createSpaceAction = new App\Actions\CreateSpaceAction($repository);
+    $service = new AppService($repository, $ensurePersonalSpaceAction, $loginUserAction, $createSpaceAction);
     $controller = new AppApiController($service);
 
     if ($uri === '/health') {
