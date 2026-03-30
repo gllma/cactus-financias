@@ -29,6 +29,7 @@ async function login(): Promise<void> {
       throw new Error(payload?.message ?? 'Não foi possível entrar.');
     }
 
+    sessionStorage.setItem('cactus_show_login_splash', '1');
     session.setAuth(payload.data.token);
     if (payload.data.active_space_id) {
       session.setActiveSpace(payload.data.active_space_id);
