@@ -6,9 +6,16 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: cactus_financias
+      DB_USERNAME: cactus
+      DB_PASSWORD: cactus
       OBSERVABILITY_ALLOWLIST: admin@cactus.com,1
     ports:
       - '8000:8000'
+    depends_on:
+      - db
 
   frontend:
     build:

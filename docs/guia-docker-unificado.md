@@ -84,3 +84,9 @@ Instale `make` e rode novamente.
 
 ### Falha na sincronização da branch
 `make sync` depende de branch `main` local/remota configurada.
+
+
+### O que o `make deploy` executa
+- Rebuild e atualização de backend/frontend (`docker compose up -d --build --force-recreate --remove-orphans`).
+- No backend: roda `php backend/artisan optimize:clear` e `php backend/artisan migrate --force` quando `backend/artisan` existir.
+- No frontend: roda `npm install && npm run build` em container Node dedicado (`node:22-alpine`).

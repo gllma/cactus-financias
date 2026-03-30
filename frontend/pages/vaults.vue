@@ -175,14 +175,14 @@ onMounted(async () => {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Nome</span>
-          <input v-model="newVaultName" placeholder="Nome do cofre" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+          <input v-model="newVaultName" placeholder="Nome do cofre" class="input-control" />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Meta (opcional)</span>
-          <input v-model.number="newVaultTarget" type="number" min="0" step="0.01" placeholder="Ex: 15000" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+          <input v-model.number="newVaultTarget" type="number" min="0" step="0.01" placeholder="Ex: 15000" class="input-control" />
         </label>
         <div class="flex items-end">
-          <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="createVault">Criar cofre</button>
+          <button type="button" class="action-primary" @click="createVault">Criar cofre</button>
         </div>
       </div>
     </div>
@@ -195,7 +195,7 @@ onMounted(async () => {
             v-for="vault in vaults"
             :key="vault.id"
             type="button"
-            class="w-full text-left inline-flex items-center px-4 py-3 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            class="w-full text-left action-secondary"
             @click="loadTransactions(vault.id)"
           >
             <span>
@@ -213,20 +213,20 @@ onMounted(async () => {
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
-          <select v-model="txType" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500">
+          <select v-model="txType" class="input-control">
             <option value="deposit">Depósito</option>
             <option value="withdraw">Saque</option>
           </select>
-          <select v-model="txCategory" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500">
+          <select v-model="txCategory" class="input-control">
             <option value="geral">Geral</option>
             <option value="reserva">Reserva</option>
             <option value="lazer">Lazer</option>
             <option value="moradia">Moradia</option>
             <option value="investimento">Investimento</option>
           </select>
-          <input v-model.number="txAmount" type="number" min="0.01" step="0.01" placeholder="Valor" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
-          <input v-model="txDescription" placeholder="Descrição" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
-          <button type="button" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="addTransaction">Registrar</button>
+          <input v-model.number="txAmount" type="number" min="0.01" step="0.01" placeholder="Valor" class="input-control" />
+          <input v-model="txDescription" placeholder="Descrição" class="input-control" />
+          <button type="button" class="action-primary" @click="addTransaction">Registrar</button>
         </div>
 
         <ul class="divide-y divide-gray-100 dark:divide-gray-700">

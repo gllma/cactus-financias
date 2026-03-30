@@ -60,20 +60,20 @@ async function login(): Promise<void> {
       <div class="grid grid-cols-1 gap-4">
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Nome</span>
-          <input v-model="session.userName" placeholder="Nome" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+          <input v-model="session.userName" placeholder="Nome" class="input-control" />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400">E-mail</span>
-          <input v-model="session.userEmail" placeholder="E-mail" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+          <input v-model="session.userEmail" placeholder="E-mail" class="input-control" />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Senha</span>
-          <input v-model="password" placeholder="Senha" type="password" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
+          <input v-model="password" placeholder="Senha" type="password" class="input-control" />
         </label>
       </div>
 
       <div class="mt-6 flex items-center gap-3">
-        <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="login" :disabled="loading">
+        <button type="button" class="action-primary" @click="login" :disabled="loading">
           {{ loading ? 'Entrando...' : 'Entrar' }}
         </button>
       </div>

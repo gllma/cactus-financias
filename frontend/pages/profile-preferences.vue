@@ -76,8 +76,8 @@ async function setTheme(theme: 'light' | 'dark') {
 
       <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Tema atual: <span class="text-gray-900 dark:text-white">{{ handler.currentTheme }}</span></p>
       <div class="flex flex-wrap gap-3">
-        <button type="button" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" @click="setTheme('light')">Tema Claro</button>
-        <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="setTheme('dark')">Tema Escuro</button>
+        <button type="button" class="action-secondary" @click="setTheme('light')">Tema Claro</button>
+        <button type="button" class="action-primary" @click="setTheme('dark')">Tema Escuro</button>
       </div>
     </div>
 

@@ -79,8 +79,8 @@ onMounted(async () => {
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-6 space-y-4">
       <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Crie seu espaço e participe de espaços compartilhados.</p>
       <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4">
-        <input v-model="newSpaceName" placeholder="Nome do novo espaço" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
-        <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="createSpace">Criar espaço</button>
+        <input v-model="newSpaceName" placeholder="Nome do novo espaço" class="input-control" />
+        <button type="button" class="action-primary" @click="createSpace">Criar espaço</button>
       </div>
     </div>
 
@@ -90,11 +90,11 @@ onMounted(async () => {
         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ space.role }} · {{ space.membership_status }}</p>
         <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">Proprietário: {{ space.owner_email }}</p>
         <div class="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-3 mt-4">
-          <button type="button" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" @click="activateSpace(space.id)">
+          <button type="button" class="action-secondary" @click="activateSpace(space.id)">
             Ativar espaço
           </button>
-          <input v-model="inviteEmail" placeholder="E-mail para convidar" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500" />
-          <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900" @click="invite(space.id)">Convidar</button>
+          <input v-model="inviteEmail" placeholder="E-mail para convidar" class="input-control" />
+          <button type="button" class="action-primary" @click="invite(space.id)">Convidar</button>
         </div>
       </article>
     </div>

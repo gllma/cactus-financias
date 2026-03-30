@@ -17,49 +17,15 @@ if ($method === 'OPTIONS') {
     exit;
 }
 
-$storageDir = __DIR__ . '/../storage';
-if (!is_dir($storageDir)) {
-    mkdir($storageDir, 0777, true);
-}
-
-$database = new PDO('sqlite:' . $storageDir . '/cactus_financias.sqlite');
-$database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-$database->exec('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, name TEXT, theme_preference TEXT NOT NULL DEFAULT "light")');
-$database->exec('CREATE TABLE IF NOT EXISTS vaults (id INTEGER PRIMARY KEY AUTOINCREMENT, user_email TEXT NOT NULL, name TEXT NOT NULL, target_amount REAL DEFAULT 0, created_at TEXT NOT NULL)');
-$database->exec('CREATE TABLE IF NOT EXISTS vault_transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, vault_id INTEGER NOT NULL, type TEXT NOT NULL, amount REAL NOT NULL, category TEXT DEFAULT "geral", description TEXT, created_at TEXT NOT NULL)');
-$database->exec('CREATE TABLE IF NOT EXISTS spaces (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, owner_email TEXT NOT NULL, created_at TEXT NOT NULL)');
-$database->exec('CREATE TABLE IF NOT EXISTS space_members (id INTEGER PRIMARY KEY AUTOINCREMENT, space_id INTEGER NOT NULL, user_email TEXT NOT NULL, role TEXT NOT NULL DEFAULT "member", status TEXT NOT NULL DEFAULT "active", created_at TEXT NOT NULL)');
-$database->exec('CREATE TABLE IF NOT EXISTS auth_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT, token TEXT UNIQUE NOT NULL, user_email TEXT NOT NULL, active_space_id INTEGER, created_at TEXT NOT NULL)');
-
-$columns = $database->query('PRAGMA table_info(vault_transactions)')->fetchAll(PDO::FETCH_ASSOC) ?: [];
-$hasCategory = false;
-foreach ($columns as $column) {
-    if (($column['name'] ?? '') === 'category') {
-        $hasCategory = true;
-        break;
+function envOr(string $key, string $default): string
+{
+    $value = getenv($key);
+    if ($value === false || trim($value) === '') {
+        return $default;
     }
-}
-if (!$hasCategory) {
-    $database->exec('ALTER TABLE vault_transactions ADD COLUMN category TEXT DEFAULT "geral"');
-}
 
-$vaultColumns = $database->query('PRAGMA table_info(vaults)')->fetchAll(PDO::FETCH_ASSOC) ?: [];
-$hasSpaceId = false;
-foreach ($vaultColumns as $column) {
-    if (($column['name'] ?? '') === 'space_id') {
-        $hasSpaceId = true;
-        break;
-    }
+    return $value;
 }
-if (!$hasSpaceId) {
-    $database->exec('ALTER TABLE vaults ADD COLUMN space_id INTEGER');
-}
-
-$userEmail = $_SERVER['HTTP_X_USER_EMAIL'] ?? '';
-$userName = $_SERVER['HTTP_X_USER_NAME'] ?? '';
-
-$insert = $database->prepare('INSERT OR IGNORE INTO users (email, name, theme_preference) VALUES (:email, :name, :theme)');
-$insert->execute(['email' => $userEmail !== '' ? $userEmail : 'admin@cactus.com', 'name' => $userName !== '' ? $userName : 'Maria Silva', 'theme' => 'light']);
 
 function jsonResponse(array $payload, int $status = 200): void
 {
@@ -69,6 +35,76 @@ function jsonResponse(array $payload, int $status = 200): void
     exit;
 }
 
+try {
+    $dbHost = envOr('DB_HOST', 'db');
+    $dbPort = envOr('DB_PORT', '5432');
+    $dbName = envOr('DB_DATABASE', 'cactus_financias');
+    $dbUser = envOr('DB_USERNAME', 'cactus');
+    $dbPassword = envOr('DB_PASSWORD', 'cactus');
+
+    $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $dbHost, $dbPort, $dbName);
+    $database = new PDO($dsn, $dbUser, $dbPassword, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+} catch (Throwable $exception) {
+    jsonResponse([
+        'message' => 'Falha ao conectar no banco de dados PostgreSQL.',
+        'error' => $exception->getMessage(),
+    ], 500);
+}
+
+$database->exec("CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(190) NOT NULL UNIQUE,
+    name VARCHAR(190) NOT NULL,
+    theme_preference VARCHAR(20) NOT NULL DEFAULT 'light'
+)");
+
+$database->exec("CREATE TABLE IF NOT EXISTS spaces (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(190) NOT NULL,
+    owner_email VARCHAR(190) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL
+)");
+
+$database->exec("CREATE TABLE IF NOT EXISTS space_members (
+    id SERIAL PRIMARY KEY,
+    space_id INTEGER NOT NULL,
+    user_email VARCHAR(190) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'member',
+    status VARCHAR(50) NOT NULL DEFAULT 'active',
+    created_at TIMESTAMPTZ NOT NULL,
+    UNIQUE (space_id, user_email)
+)");
+
+$database->exec("CREATE TABLE IF NOT EXISTS auth_tokens (
+    id SERIAL PRIMARY KEY,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    user_email VARCHAR(190) NOT NULL,
+    active_space_id INTEGER,
+    created_at TIMESTAMPTZ NOT NULL
+)");
+
+$database->exec("CREATE TABLE IF NOT EXISTS vaults (
+    id SERIAL PRIMARY KEY,
+    user_email VARCHAR(190) NOT NULL,
+    space_id INTEGER,
+    name VARCHAR(190) NOT NULL,
+    target_amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL
+)");
+
+$database->exec("CREATE TABLE IF NOT EXISTS vault_transactions (
+    id SERIAL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    amount NUMERIC(14,2) NOT NULL,
+    category VARCHAR(80) NOT NULL DEFAULT 'geral',
+    description TEXT,
+    created_at TIMESTAMPTZ NOT NULL
+)");
+
 function ensurePersonalSpace(PDO $database, string $userEmail): int
 {
     $spaceName = 'Espaço de ' . $userEmail;
@@ -77,12 +113,14 @@ function ensurePersonalSpace(PDO $database, string $userEmail): int
     $spaceId = (int) ($query->fetchColumn() ?: 0);
 
     if ($spaceId === 0) {
-        $insert = $database->prepare('INSERT INTO spaces (name, owner_email, created_at) VALUES (:name, :email, :created_at)');
+        $insert = $database->prepare('INSERT INTO spaces (name, owner_email, created_at) VALUES (:name, :email, :created_at) RETURNING id');
         $insert->execute(['name' => $spaceName, 'email' => $userEmail, 'created_at' => gmdate('c')]);
-        $spaceId = (int) $database->lastInsertId();
+        $spaceId = (int) $insert->fetchColumn();
     }
 
-    $membership = $database->prepare('INSERT OR IGNORE INTO space_members (space_id, user_email, role, status, created_at) VALUES (:space_id, :email, :role, :status, :created_at)');
+    $membership = $database->prepare("INSERT INTO space_members (space_id, user_email, role, status, created_at)
+        VALUES (:space_id, :email, :role, :status, :created_at)
+        ON CONFLICT (space_id, user_email) DO NOTHING");
     $membership->execute([
         'space_id' => $spaceId,
         'email' => $userEmail,
@@ -113,7 +151,7 @@ function requireAuthenticatedUser(PDO $database): array
 
     $query = $database->prepare('SELECT user_email, active_space_id FROM auth_tokens WHERE token = :token LIMIT 1');
     $query->execute(['token' => $token]);
-    $row = $query->fetch(PDO::FETCH_ASSOC);
+    $row = $query->fetch();
     if (!$row) {
         jsonResponse(['message' => 'Token inválido.'], 401);
     }
@@ -129,6 +167,7 @@ if ($uri === '/health') {
     jsonResponse([
         'status' => 'ok',
         'service' => 'cactus-financias-backend',
+        'database' => 'postgresql',
     ]);
 }
 
@@ -142,7 +181,9 @@ if ($uri === '/api/auth/login' && $method === 'POST') {
         jsonResponse(['message' => 'E-mail e senha são obrigatórios.'], 422);
     }
 
-    $insert = $database->prepare('INSERT OR IGNORE INTO users (email, name, theme_preference) VALUES (:email, :name, :theme)');
+    $insert = $database->prepare("INSERT INTO users (email, name, theme_preference)
+        VALUES (:email, :name, :theme)
+        ON CONFLICT (email) DO NOTHING");
     $insert->execute(['email' => $email, 'name' => $name, 'theme' => 'light']);
 
     $update = $database->prepare('UPDATE users SET name = :name WHERE email = :email');
@@ -171,10 +212,13 @@ if ($uri === '/api/auth/login' && $method === 'POST') {
 
 $tokenContext = null;
 $incomingToken = resolveBearerToken();
+$userEmail = $_SERVER['HTTP_X_USER_EMAIL'] ?? '';
+$userName = $_SERVER['HTTP_X_USER_NAME'] ?? '';
+
 if ($incomingToken !== '') {
     $tokenQuery = $database->prepare('SELECT user_email, active_space_id FROM auth_tokens WHERE token = :token LIMIT 1');
     $tokenQuery->execute(['token' => $incomingToken]);
-    $tokenContext = $tokenQuery->fetch(PDO::FETCH_ASSOC) ?: null;
+    $tokenContext = $tokenQuery->fetch() ?: null;
     if (!$tokenContext) {
         jsonResponse(['message' => 'Token inválido.'], 401);
     }
@@ -193,7 +237,9 @@ if ($userName === '') {
     $userName = 'Maria Silva';
 }
 
-$insertUser = $database->prepare('INSERT OR IGNORE INTO users (email, name, theme_preference) VALUES (:email, :name, :theme)');
+$insertUser = $database->prepare("INSERT INTO users (email, name, theme_preference)
+    VALUES (:email, :name, :theme)
+    ON CONFLICT (email) DO NOTHING");
 $insertUser->execute(['email' => $userEmail, 'name' => $userName, 'theme' => 'light']);
 
 $personalSpaceId = ensurePersonalSpace($database, $userEmail);
@@ -201,7 +247,7 @@ $backfillVaults = $database->prepare('UPDATE vaults SET space_id = :space_id WHE
 $backfillVaults->execute(['space_id' => $personalSpaceId, 'email' => $userEmail]);
 $activeSpaceId = (int) ($_SERVER['HTTP_X_SPACE_ID'] ?? ($tokenContext['active_space_id'] ?? $personalSpaceId));
 
-$memberQuery = $database->prepare('SELECT COUNT(*) FROM space_members WHERE space_id = :space_id AND user_email = :email AND status IN ("active", "invited")');
+$memberQuery = $database->prepare("SELECT COUNT(*) FROM space_members WHERE space_id = :space_id AND user_email = :email AND status IN ('active', 'invited')");
 $memberQuery->execute(['space_id' => $activeSpaceId, 'email' => $userEmail]);
 if ((int) $memberQuery->fetchColumn() === 0) {
     $activeSpaceId = $personalSpaceId;
@@ -234,7 +280,7 @@ if ($uri === '/api/auth/switch-space' && $method === 'POST') {
         jsonResponse(['message' => 'space_id inválido.'], 422);
     }
 
-    $check = $database->prepare('SELECT COUNT(*) FROM space_members WHERE space_id = :space_id AND user_email = :email AND status IN ("active", "invited")');
+    $check = $database->prepare("SELECT COUNT(*) FROM space_members WHERE space_id = :space_id AND user_email = :email AND status IN ('active', 'invited')");
     $check->execute(['space_id' => $spaceId, 'email' => $context['email']]);
     if ((int) $check->fetchColumn() === 0) {
         jsonResponse(['message' => 'Você não participa deste espaço.'], 403);
@@ -264,7 +310,7 @@ if ($uri === '/api/spaces' && $method === 'GET') {
     );
     $query->execute(['email' => $userEmail]);
 
-    jsonResponse(['data' => $query->fetchAll(PDO::FETCH_ASSOC) ?: []]);
+    jsonResponse(['data' => $query->fetchAll() ?: []]);
 }
 
 if ($uri === '/api/spaces' && $method === 'POST') {
@@ -274,13 +320,13 @@ if ($uri === '/api/spaces' && $method === 'POST') {
         jsonResponse(['message' => 'Nome do espaço é obrigatório.'], 422);
     }
 
-    $insert = $database->prepare('INSERT INTO spaces (name, owner_email, created_at) VALUES (:name, :owner_email, :created_at)');
+    $insert = $database->prepare('INSERT INTO spaces (name, owner_email, created_at) VALUES (:name, :owner_email, :created_at) RETURNING id');
     $insert->execute([
         'name' => $name,
         'owner_email' => $userEmail,
         'created_at' => gmdate('c'),
     ]);
-    $spaceId = (int) $database->lastInsertId();
+    $spaceId = (int) $insert->fetchColumn();
 
     $memberInsert = $database->prepare('INSERT INTO space_members (space_id, user_email, role, status, created_at) VALUES (:space_id, :user_email, :role, :status, :created_at)');
     $memberInsert->execute([
@@ -318,13 +364,16 @@ if (preg_match('#^/api/spaces/(\d+)/invite$#', $uri, $matches) === 1 && $method 
         jsonResponse(['message' => 'E-mail do convite é obrigatório.'], 422);
     }
 
-    $ownerCheck = $database->prepare('SELECT COUNT(*) FROM space_members WHERE space_id = :space_id AND user_email = :email AND role = "owner"');
+    $ownerCheck = $database->prepare("SELECT COUNT(*) FROM space_members WHERE space_id = :space_id AND user_email = :email AND role = 'owner'");
     $ownerCheck->execute(['space_id' => $spaceId, 'email' => $userEmail]);
     if ((int) $ownerCheck->fetchColumn() === 0) {
         jsonResponse(['message' => 'Somente o dono pode convidar pessoas.'], 403);
     }
 
-    $inviteInsert = $database->prepare('INSERT OR REPLACE INTO space_members (space_id, user_email, role, status, created_at) VALUES (:space_id, :user_email, :role, :status, :created_at)');
+    $inviteInsert = $database->prepare("INSERT INTO space_members (space_id, user_email, role, status, created_at)
+        VALUES (:space_id, :user_email, :role, :status, :created_at)
+        ON CONFLICT (space_id, user_email)
+        DO UPDATE SET role = EXCLUDED.role, status = EXCLUDED.status, created_at = EXCLUDED.created_at");
     $inviteInsert->execute([
         'space_id' => $spaceId,
         'user_email' => $inviteEmail,
@@ -400,7 +449,7 @@ if ($uri === '/api/vaults' && $method === 'GET') {
          ORDER BY v.id DESC"
     );
     $query->execute(['space_id' => $activeSpaceId]);
-    $vaults = $query->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    $vaults = $query->fetchAll() ?: [];
 
     jsonResponse(['data' => $vaults]);
 }
@@ -415,7 +464,7 @@ if ($uri === '/api/vaults/insights' && $method === 'GET') {
          WHERE v.space_id = :space_id"
     );
     $totalsQuery->execute(['space_id' => $activeSpaceId]);
-    $totals = $totalsQuery->fetch(PDO::FETCH_ASSOC) ?: ['total_balance' => 0, 'total_target' => 0];
+    $totals = $totalsQuery->fetch() ?: ['total_balance' => 0, 'total_target' => 0];
 
     $monthStart = gmdate('Y-m-01T00:00:00+00:00');
     $flowQuery = $database->prepare(
@@ -427,7 +476,7 @@ if ($uri === '/api/vaults/insights' && $method === 'GET') {
          WHERE v.space_id = :space_id AND t.created_at >= :month_start"
     );
     $flowQuery->execute(['space_id' => $activeSpaceId, 'month_start' => $monthStart]);
-    $flow = $flowQuery->fetch(PDO::FETCH_ASSOC) ?: ['deposits' => 0, 'withdrawals' => 0];
+    $flow = $flowQuery->fetch() ?: ['deposits' => 0, 'withdrawals' => 0];
 
     $target = (float) $totals['total_target'];
     $balance = (float) $totals['total_balance'];
@@ -463,7 +512,7 @@ if ($uri === '/api/transactions/recent' && $method === 'GET') {
     $query->bindValue(':limit', $limit, PDO::PARAM_INT);
     $query->execute();
 
-    jsonResponse(['data' => $query->fetchAll(PDO::FETCH_ASSOC) ?: []]);
+    jsonResponse(['data' => $query->fetchAll() ?: []]);
 }
 
 if ($uri === '/api/vaults' && $method === 'POST') {
@@ -480,7 +529,7 @@ if ($uri === '/api/vaults' && $method === 'POST') {
     }
 
     $createdAt = gmdate('c');
-    $insert = $database->prepare('INSERT INTO vaults (user_email, space_id, name, target_amount, created_at) VALUES (:email, :space_id, :name, :target, :created_at)');
+    $insert = $database->prepare('INSERT INTO vaults (user_email, space_id, name, target_amount, created_at) VALUES (:email, :space_id, :name, :target, :created_at) RETURNING id');
     $insert->execute([
         'email' => $userEmail,
         'space_id' => $activeSpaceId,
@@ -488,11 +537,12 @@ if ($uri === '/api/vaults' && $method === 'POST') {
         'target' => $targetAmount,
         'created_at' => $createdAt,
     ]);
+    $vaultId = (int) $insert->fetchColumn();
 
     jsonResponse([
         'message' => 'Cofre criado com sucesso.',
         'data' => [
-            'id' => (int) $database->lastInsertId(),
+            'id' => $vaultId,
             'name' => $name,
             'target_amount' => $targetAmount,
             'balance' => 0,
@@ -505,7 +555,7 @@ if (preg_match('#^/api/vaults/(\d+)/transactions$#', $uri, $matches) === 1) {
     $vaultId = (int) $matches[1];
     $vaultQuery = $database->prepare('SELECT id, name, target_amount, created_at FROM vaults WHERE id = :id AND space_id = :space_id LIMIT 1');
     $vaultQuery->execute(['id' => $vaultId, 'space_id' => $activeSpaceId]);
-    $vault = $vaultQuery->fetch(PDO::FETCH_ASSOC);
+    $vault = $vaultQuery->fetch();
 
     if (!$vault) {
         jsonResponse(['message' => 'Cofre não encontrado.'], 404);
@@ -514,7 +564,7 @@ if (preg_match('#^/api/vaults/(\d+)/transactions$#', $uri, $matches) === 1) {
     if ($method === 'GET') {
         $transactionsQuery = $database->prepare('SELECT id, type, amount, category, description, created_at FROM vault_transactions WHERE vault_id = :vault_id ORDER BY id DESC');
         $transactionsQuery->execute(['vault_id' => $vaultId]);
-        $transactions = $transactionsQuery->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $transactions = $transactionsQuery->fetchAll() ?: [];
 
         $balanceQuery = $database->prepare("SELECT COALESCE(SUM(CASE WHEN type = 'deposit' THEN amount WHEN type = 'withdraw' THEN -amount ELSE 0 END), 0) FROM vault_transactions WHERE vault_id = :vault_id");
         $balanceQuery->execute(['vault_id' => $vaultId]);
@@ -562,7 +612,7 @@ if (preg_match('#^/api/vaults/(\d+)/transactions$#', $uri, $matches) === 1) {
         }
 
         $createdAt = gmdate('c');
-        $insert = $database->prepare('INSERT INTO vault_transactions (vault_id, type, amount, category, description, created_at) VALUES (:vault_id, :type, :amount, :category, :description, :created_at)');
+        $insert = $database->prepare('INSERT INTO vault_transactions (vault_id, type, amount, category, description, created_at) VALUES (:vault_id, :type, :amount, :category, :description, :created_at) RETURNING id');
         $insert->execute([
             'vault_id' => $vaultId,
             'type' => $type,
@@ -571,12 +621,13 @@ if (preg_match('#^/api/vaults/(\d+)/transactions$#', $uri, $matches) === 1) {
             'description' => $description,
             'created_at' => $createdAt,
         ]);
+        $transactionId = (int) $insert->fetchColumn();
 
         $newBalance = $type === 'deposit' ? $currentBalance + $amount : $currentBalance - $amount;
         jsonResponse([
             'message' => 'Movimentação registrada com sucesso.',
             'data' => [
-                'id' => (int) $database->lastInsertId(),
+                'id' => $transactionId,
                 'vault_id' => $vaultId,
                 'type' => $type,
                 'amount' => $amount,
