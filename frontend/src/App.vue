@@ -11,11 +11,14 @@ const currentTheme = ref<'light' | 'dark'>('light');
 const isBooting = ref(true);
 const showLoginSplash = ref(false);
 
+const showAppShell = computed(() => session.isAuthenticated.value && !['/login', '/register'].includes(route.path));
+
 const routeTitle = computed(() => {
   if (route.path.includes('spaces')) return 'Espaços';
   if (route.path.includes('vaults')) return 'Cofres';
   if (route.path.includes('observability')) return 'Observabilidade';
   if (route.path.includes('profile')) return 'Perfil';
+  if (route.path.includes('register')) return 'Cadastro';
   return 'Login';
 });
 
@@ -91,7 +94,7 @@ function toggleTheme(): void {
       </div>
     </div>
 
-    <template v-if="session.isAuthenticated">
+    <template v-if="showAppShell">
       <div
         v-if="mobileMenuOpen"
         class="fixed inset-0 z-20 bg-gray-900/40 md:hidden"

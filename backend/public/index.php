@@ -92,8 +92,19 @@ try {
         jsonResponse(['message' => 'Login realizado com sucesso.', 'data' => $result]);
     }
 
+    if ($uri === '/api/auth/register' && $method === 'POST') {
+        $data = payload();
+        $result = $service->register(
+            trim((string) ($data['email'] ?? '')),
+            trim((string) ($data['name'] ?? '')),
+            (string) ($data['password'] ?? ''),
+        );
+
+        jsonResponse(['message' => 'Cadastro realizado com sucesso.', 'data' => $result], 201);
+    }
+
     $authContext = null;
-    if (str_starts_with($uri, '/api') && !in_array($uri, ['/api/auth/login'], true)) {
+    if (str_starts_with($uri, '/api') && !in_array($uri, ['/api/auth/login', '/api/auth/register'], true)) {
         $authContext = $controller->requireAuth();
     }
 

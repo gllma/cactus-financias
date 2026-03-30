@@ -21,6 +21,20 @@ class AppService
         $this->repository->bootstrapSchema();
     }
 
+
+    public function register(string $email, string $name, string $password): array
+    {
+        if ($email === '' || $name === '' || $password === '') {
+            throw new RuntimeException('Nome, e-mail e senha são obrigatórios.');
+        }
+
+        if ($this->repository->userExistsByEmail($email)) {
+            throw new RuntimeException('E-mail já cadastrado.');
+        }
+
+        return $this->loginUserAction->execute($email, $name);
+    }
+
     public function login(string $email, string $name, string $password): array
     {
         if ($email === '' || $password === '') {

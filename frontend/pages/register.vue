@@ -23,13 +23,13 @@ const userEmail = computed({
 const router = useRouter();
 const loading = ref(false);
 const error = ref('');
-const password = ref('123456');
+const password = ref('');
 
-async function login(): Promise<void> {
+async function register(): Promise<void> {
   loading.value = true;
   error.value = '';
   try {
-    const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
+    const response = await fetch(`${apiBaseUrl}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -41,7 +41,7 @@ async function login(): Promise<void> {
 
     const payload = await response.json();
     if (!response.ok) {
-      throw new Error(payload?.message ?? 'Não foi possível entrar.');
+      throw new Error(payload?.message ?? 'Não foi possível cadastrar.');
     }
 
     sessionStorage.setItem('cactus_show_login_splash', '1');
@@ -49,6 +49,7 @@ async function login(): Promise<void> {
     if (payload.data.active_space_id) {
       session.setActiveSpace(payload.data.active_space_id);
     }
+
     await router.push('/vaults');
   } catch (err) {
     error.value = (err as Error).message;
@@ -60,23 +61,23 @@ async function login(): Promise<void> {
 
 <template>
   <section class="min-h-full grid lg:grid-cols-2 gap-6 items-stretch">
-    <div class="hidden lg:flex card p-8 flex-col justify-between bg-gradient-to-br from-blue-600 to-blue-800 text-white border-blue-600">
+    <div class="hidden lg:flex card p-8 flex-col justify-between bg-gradient-to-br from-emerald-600 to-emerald-800 text-white border-emerald-600">
       <div>
-        <p class="uppercase text-xs tracking-widest text-blue-100">Cactus Financias</p>
-        <h1 class="mt-4 text-3xl font-bold">Gestão financeira inteligente para seus espaços</h1>
-        <p class="mt-3 text-blue-100">Controle cofres, acompanhe movimentações e monitore a saúde operacional em um painel moderno.</p>
+        <p class="uppercase text-xs tracking-widest text-emerald-100">Cadastro</p>
+        <h1 class="mt-4 text-3xl font-bold">Crie seu espaço financeiro</h1>
+        <p class="mt-3 text-emerald-100">Cadastre-se para começar a organizar cofres, movimentações e colaboração entre espaços.</p>
       </div>
-      <p class="text-sm text-blue-100">Padrão SaaS com foco em clareza, produtividade e segurança.</p>
+      <p class="text-sm text-emerald-100">Fluxo dedicado de autenticação e cadastro.</p>
     </div>
 
     <div class="card p-6 md:p-8 self-center">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Entrar</h1>
-      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-6">Acesse sua conta para gerenciar seus espaços e finanças compartilhadas.</p>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Criar conta</h1>
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-6">Preencha os dados para iniciar seu acesso.</p>
 
       <div class="grid grid-cols-1 gap-4">
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Nome</span>
-          <input v-model="userName" placeholder="Nome" class="input-control" />
+          <input v-model="userName" placeholder="Nome completo" class="input-control" />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400">E-mail</span>
@@ -89,10 +90,10 @@ async function login(): Promise<void> {
       </div>
 
       <div class="mt-6 flex items-center gap-3">
-        <button type="button" class="action-primary" @click="login" :disabled="loading">
-          {{ loading ? 'Entrando...' : 'Entrar' }}
+        <button type="button" class="action-primary" @click="register" :disabled="loading">
+          {{ loading ? 'Cadastrando...' : 'Cadastrar' }}
         </button>
-        <RouterLink to="/register" class="action-secondary">Criar conta</RouterLink>
+        <RouterLink to="/login" class="action-secondary">Já tenho conta</RouterLink>
       </div>
 
       <p v-if="error" class="mt-4 text-sm font-medium text-red-600 dark:text-red-400">{{ error }}</p>

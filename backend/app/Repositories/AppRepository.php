@@ -122,6 +122,15 @@ class AppRepository
         return $id !== false ? (int) $id : null;
     }
 
+
+    public function userExistsByEmail(string $email): bool
+    {
+        $query = $this->database->prepare('SELECT COUNT(*) FROM users WHERE email = :email');
+        $query->execute(['email' => $email]);
+
+        return (int) $query->fetchColumn() > 0;
+    }
+
     public function findThemeByEmail(string $email): string
     {
         $query = $this->database->prepare('SELECT theme_preference FROM users WHERE email = :email LIMIT 1');
@@ -379,6 +388,41 @@ class AppRepository
         $query->execute();
 
         return $query->fetchAll() ?: [];
+    }
+
+
+    public function dashboardSummary(int $spaceId): array
+    {
+        $summaryQuery = $this->database->prepare(
+            "SELECT
+                COUNT(DISTINCT v.id) AS total_vaults,
+                COALESCE(SUM(CASE WHEN t.type = 'deposit' THEN t.amount WHEN t.type = 'withdraw' THEN -t.amount ELSE 0 END), 0) AS total_balance,
+                COALESCE(SUM(CASE WHEN t.type = 'deposit' THEN t.amount ELSE 0 END), 0) AS total_deposits,
+                COALESCE(SUM(CASE WHEN t.type = 'withdraw' THEN t.amount ELSE 0 END), 0) AS total_withdrawals
+             FROM vaults v
+             LEFT JOIN vault_transactions t ON t.vault_id = v.id
+             WHERE v.space_id = :space_id"
+        );
+        $summaryQuery->execute(['space_id' => $spaceId]);
+        $summary = $summaryQuery->fetch() ?: [];
+
+        $recentQuery = $this->database->prepare(
+            "SELECT t.id, v.name AS vault_name, t.type, t.amount, t.category, t.created_at
+             FROM vault_transactions t
+             INNER JOIN vaults v ON v.id = t.vault_id
+             WHERE v.space_id = :space_id
+             ORDER BY t.id DESC
+             LIMIT 5"
+        );
+        $recentQuery->execute(['space_id' => $spaceId]);
+
+        return [
+            'total_vaults' => (int) ($summary['total_vaults'] ?? 0),
+            'total_balance' => (float) ($summary['total_balance'] ?? 0),
+            'total_deposits' => (float) ($summary['total_deposits'] ?? 0),
+            'total_withdrawals' => (float) ($summary['total_withdrawals'] ?? 0),
+            'recent_transactions' => $recentQuery->fetchAll() ?: [],
+        ];
     }
 
     public function totalUsers(): int
